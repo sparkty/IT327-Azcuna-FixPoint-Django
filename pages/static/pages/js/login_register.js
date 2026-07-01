@@ -86,6 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Replace the body of each handler with a real fetch()/API call once
   // your Django auth views and endpoints exist.
 
+
+  /*
   const loginForm = document.getElementById('form-login');
   loginForm.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -102,6 +104,8 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('[register] submit — not yet connected to backend.');
   });
 
+
+   */
   const forgotForm = document.getElementById('form-forgot');
   forgotForm.addEventListener('submit', function (e) {
     e.preventDefault();
