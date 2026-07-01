@@ -1,7 +1,8 @@
 from django.shortcuts import render
 
-def login_page(request):
-    return render(request, 'pages/login.html')
+
+def login_register(request):
+    return render(request, 'pages/login_register.html')
 
 def dashboard(request):
     return render(request, 'pages/dashboard.html')
