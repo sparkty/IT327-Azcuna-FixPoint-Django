@@ -1,10 +1,519 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FixPoint Dashboard — track and manage your reported issues">
+    <title>Dashboard — FixPoint</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'pages/css/dashboard.css' %}">
 </head>
 <body>
+<div class="dashboard-container">
+
+    <!--
+         FIXED TOP NAV
+     -->
+    <nav class="top-nav" role="navigation" aria-label="Top navigation">
+        <div class="top-nav-inner">
+            <div class="nav-logo">⬡ FixPoint</div>
+            <div class="nav-right">
+                <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                {% if request.user.is_staff %}
+                    <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="app-shell">
+
+            <!--
+                 FIXED SIDEBAR
+             -->
+            <aside class="sidebar" role="complementary" aria-label="Sidebar navigation">
+                <div class="sidebar-section">
+                    <div class="sidebar-label">Navigation</div>
+                    <a href="{% url 'dashboard' %}" class="sidebar-link active" id="nav-dashboard">
+                        <span class="sidebar-icon">◈</span> Dashboard
+                    </a>
+                    <a href="#" class="sidebar-link" id="nav-issues">
+                        <span class="sidebar-icon">◉</span> My Issues
+                    </a>
+                    <a href="#" class="sidebar-link" id="nav-notifications">
+                        <span class="sidebar-icon">◎</span> Notifications
+                    </a>
+                    <a href="#" class="sidebar-link" id="nav-profile">
+                        <span class="sidebar-icon">◌</span> Profile
+                    </a>
+                </div>
+                {% if request.user.is_staff %}
+                <div class="sidebar-section sidebar-admin">
+                    <div class="sidebar-label">Admin</div>
+                    <a href="#" class="sidebar-link" id="nav-users">
+                        <span class="sidebar-icon">◈</span> Users
+                    </a>
+                    <a href="#" class="sidebar-link" id="nav-roles">
+                        <span class="sidebar-icon">◈</span> Roles
+                    </a>
+                </div>
+                {% endif %}
+            </aside>
+
+            <!--
+                 MAIN AREA
+            -->
+            <div class="main-area" role="main">
+
+                <!-- App Topbar -->
+                <div class="app-topbar">
+                    <div>
+                        <h1 class="page-title">
+                            {% if request.user.is_staff %}All Issues{% else %}My Issues{% endif %}
+                        </h1>
+                        <div class="page-sub">Track and manage your reported issues</div>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn-sm ghost" id="export-btn" onclick="exportIssues()">Export</button>
+                        <a href="#" class="btn-sm primary" id="new-issue-btn">+ New Issue</a>
+                    </div>
+                </div>
+
+                <!-- Page Body -->
+                <div class="page-body">
+
+                    <!-- ── Stat Cards ─────────────────────────────── -->
+                    <div class="stats-row" role="region" aria-label="Issue statistics">
+                        <div class="stat-card">
+                            <div class="stat-label">TOTAL ISSUES</div>
+                            <div class="stat-value">{{ stats.total }}</div>
+                            <div class="stat-trend">All time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">OPEN</div>
+                            <div class="stat-value yellow">{{ stats.open }}</div>
+                            <div class="stat-trend">Awaiting review</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">IN PROGRESS</div>
+                            <div class="stat-value blue">{{ stats.in_progress }}</div>
+                            <div class="stat-trend">Being worked on</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">RESOLVED</div>
+                            <div class="stat-value green">{{ stats.resolved }}</div>
+                            <div class="stat-trend">Closed</div>
+                        </div>
+                    </div>
+
+                    <!-- ── Admin: Issues / Users Tabs ─────────────── -->
+                    {% if request.user.is_staff %}
+                    <div class="dashboard-tabs" role="tablist" aria-label="Dashboard tabs">
+                        <button class="dashboard-tab active"
+                                id="tab-btn-issues"
+                                role="tab"
+                                aria-selected="true"
+                                aria-controls="panel-issues"
+                                onclick="switchTab('issues')">Issues</button>
+                        <button class="dashboard-tab"
+                                id="tab-btn-users"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="panel-users"
+                                onclick="switchTab('users')">Users</button>
+                    </div>
+                    {% endif %}
+
+                    <!-- ════════════════════════════════════════════
+                         ISSUES PANEL
+                    ════════════════════════════════════════════ -->
+                    <div id="panel-issues" role="tabpanel" aria-labelledby="tab-btn-issues">
+
+                        <!-- Filter Bar -->
+                        <div class="filter-bar" role="search" aria-label="Filter issues">
+                            <input type="text"
+                                   id="issue-search"
+                                   class="search-input"
+                                   placeholder="Search issues by title, description…"
+                                   oninput="filterIssues()"
+                                   aria-label="Search issues">
+                            <select id="filter-status"
+                                    class="filter-select"
+                                    onchange="filterIssues()"
+                                    aria-label="Filter by status">
+                                <option value="ALL">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                                <option value="pending_deletion">Pending Deletion</option>
+                            </select>
+                            <select id="filter-category"
+                                    class="filter-select"
+                                    onchange="filterIssues()"
+                                    aria-label="Filter by category">
+                                <option value="ALL">All Categories</option>
+                                <option value="bug">Bug</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="performance">Performance</option>
+                                <option value="security">Security</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <select id="filter-priority"
+                                    class="filter-select"
+                                    onchange="filterIssues()"
+                                    aria-label="Filter by priority">
+                                <option value="ALL">All Priority</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+
+                        <!-- Issues Table -->
+                        <div class="issues-table" role="table" aria-label="Issues list">
+                            <!-- Table Header -->
+                            <div class="table-header" role="row">
+                                <div class="th" role="columnheader">#</div>
+                                <div class="th" role="columnheader">ISSUE</div>
+                                <div class="th" role="columnheader">CATEGORY</div>
+                                <div class="th" role="columnheader">PRIORITY</div>
+                                <div class="th" role="columnheader">STATUS</div>
+                                <div class="th" role="columnheader">CREATED</div>
+                            </div>
+
+                            {% for issue in issues %}
+                            <div class="issue-row"
+                                 role="row"
+                                 id="issue-row-{{ issue.issueID }}"
+                                 data-title="{{ issue.title|lower }}"
+                                 data-desc="{{ issue.description|lower|slice:':200' }}"
+                                 data-status="{{ issue.status }}"
+                                 data-category="{{ issue.category }}"
+                                 data-priority="{{ issue.priority }}"
+                                 onclick="window.location='#'"
+                                 tabindex="0"
+                                 onkeydown="if(event.key==='Enter')window.location='#'">
+                                <div class="issue-id" role="cell">#{{ issue.issueID }}</div>
+                                <div class="issue-title-cell" role="cell">
+                                    <div class="issue-title-text">{{ issue.title }}</div>
+                                    <div class="issue-desc">{{ issue.description|slice:':120' }}{% if issue.description|length > 120 %}…{% endif %}</div>
+                                </div>
+                                <div role="cell">
+                                    <span class="badge low">{{ issue.get_category_display }}</span>
+                                </div>
+                                <div role="cell">
+                                    {% if issue.priority == 'critical' or issue.priority == 'high' %}
+                                        <span class="badge high">{{ issue.get_priority_display }}</span>
+                                    {% elif issue.priority == 'medium' %}
+                                        <span class="badge medium">{{ issue.get_priority_display }}</span>
+                                    {% else %}
+                                        <span class="badge low">{{ issue.get_priority_display }}</span>
+                                    {% endif %}
+                                </div>
+                                <div role="cell">
+                                    {% if issue.status == 'open' %}
+                                        <span class="badge pending">{{ issue.get_status_display }}</span>
+                                    {% elif issue.status == 'in_progress' %}
+                                        <span class="badge inprogress">{{ issue.get_status_display }}</span>
+                                    {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                        <span class="badge resolved">{{ issue.get_status_display }}</span>
+                                    {% elif issue.status == 'pending_deletion' %}
+                                        <span class="badge deletion">{{ issue.get_status_display }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="issue-date" role="cell">{{ issue.createdAt|date:"M d, Y" }}</div>
+                            </div>
+                            {% empty %}
+                            <div class="no-issues" id="no-issues-empty">
+                                No issues found. Click &ldquo;+ New Issue&rdquo; to create one.
+                            </div>
+                            {% endfor %}
+
+                            {% if issues %}
+                            <div id="no-issues-msg" style="display:none;" class="no-issues">
+                                No issues match your filters. Try adjusting the search or filters above.
+                            </div>
+                            {% endif %}
+                        </div><!-- /.issues-table -->
+                    </div><!-- /#panel-issues -->
+
+                    <!-- ════════════════════════════════════════════
+                         USERS PANEL  (Admin only)
+                    ════════════════════════════════════════════ -->
+                    {% if request.user.is_staff %}
+                    <div id="panel-users" style="display:none;" role="tabpanel" aria-labelledby="tab-btn-users">
+
+                        <!-- User Filter Bar -->
+                        <div class="filter-bar users-filter-bar" role="search" aria-label="Filter users">
+                            <input type="text"
+                                   id="user-search"
+                                   class="search-input"
+                                   placeholder="Search users by name, email, or issue…"
+                                   oninput="filterUsers()"
+                                   aria-label="Search users">
+                            <select id="user-filter-status"
+                                    class="filter-select"
+                                    onchange="filterUsers()"
+                                    aria-label="Filter user issues by status">
+                                <option value="ALL">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                                <option value="pending_deletion">Pending Deletion</option>
+                            </select>
+                            <select id="user-filter-priority"
+                                    class="filter-select"
+                                    onchange="filterUsers()"
+                                    aria-label="Filter user issues by priority">
+                                <option value="ALL">All Priority</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+
+                        <!-- Users List -->
+                        <div class="users-panel" id="users-list">
+                            {% for user_obj in users_with_issues %}
+                            <div class="user-group"
+                                 id="user-group-{{ user_obj.pk }}"
+                                 data-name="{{ user_obj.get_full_name|lower }}"
+                                 data-email="{{ user_obj.email|lower }}">
+
+                                <!-- User Row (expandable) -->
+                                <button class="user-row"
+                                        id="user-btn-{{ user_obj.pk }}"
+                                        onclick="toggleUser({{ user_obj.pk }})"
+                                        aria-expanded="false"
+                                        aria-controls="user-issues-{{ user_obj.pk }}">
+                                    <div class="user-avatar" aria-hidden="true">
+                                        {{ user_obj.first_name|slice:":1" }}{{ user_obj.last_name|slice:":1" }}
+                                    </div>
+                                    <div class="user-info">
+                                        <div class="user-name">{{ user_obj.get_full_name }}</div>
+                                        <div class="user-email">{{ user_obj.email }}</div>
+                                    </div>
+                                    {% if user_obj.is_staff %}
+                                        <span class="badge high">Admin</span>
+                                    {% else %}
+                                        <span class="badge low">User</span>
+                                    {% endif %}
+                                    <div class="user-issue-count">
+                                        {{ user_obj.issues.count }} issue{{ user_obj.issues.count|pluralize }}
+                                    </div>
+                                    <div class="user-chevron" id="chevron-{{ user_obj.pk }}" aria-hidden="true">+</div>
+                                </button>
+
+                                <!-- Expandable Issues Sub-list -->
+                                <div class="user-issues"
+                                     id="user-issues-{{ user_obj.pk }}"
+                                     style="display:none;">
+                                    {% for issue in user_obj.issues.all %}
+                                    <button class="user-issue-row"
+                                            id="user-issue-row-{{ issue.issueID }}"
+                                            data-title="{{ issue.title|lower }}"
+                                            data-priority="{{ issue.priority }}"
+                                            data-status="{{ issue.status }}"
+                                            onclick="window.location='#'">
+                                        <div class="issue-id">#{{ issue.issueID }}</div>
+                                        <div class="issue-title-cell">
+                                            <div class="issue-title-text">{{ issue.title }}</div>
+                                            <div class="issue-desc">{{ issue.description|slice:':100' }}{% if issue.description|length > 100 %}…{% endif %}</div>
+                                        </div>
+                                        <span class="badge low">{{ issue.get_category_display }}</span>
+                                        {% if issue.priority == 'critical' or issue.priority == 'high' %}
+                                            <span class="badge high">{{ issue.get_priority_display }}</span>
+                                        {% elif issue.priority == 'medium' %}
+                                            <span class="badge medium">{{ issue.get_priority_display }}</span>
+                                        {% else %}
+                                            <span class="badge low">{{ issue.get_priority_display }}</span>
+                                        {% endif %}
+                                        {% if issue.status == 'open' %}
+                                            <span class="badge pending">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'in_progress' %}
+                                            <span class="badge inprogress">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                            <span class="badge resolved">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'pending_deletion' %}
+                                            <span class="badge deletion">{{ issue.get_status_display }}</span>
+                                        {% endif %}
+                                    </button>
+                                    {% empty %}
+                                    <div class="user-issue-empty">This user has no issues yet.</div>
+                                    {% endfor %}
+                                </div><!-- /.user-issues -->
+
+                            </div><!-- /.user-group -->
+                            {% empty %}
+                            <div class="panel-empty">No users found in the system.</div>
+                            {% endfor %}
+
+                            <div id="no-users-msg" style="display:none;" class="panel-empty">
+                                No users match your filters.
+                            </div>
+                        </div><!-- /.users-panel -->
+                    </div><!-- /#panel-users -->
+                    {% endif %}
+
+                </div><!-- /.page-body -->
+            </div><!-- /.main-area -->
+        </div><!-- /.app-shell -->
+    </div><!-- /.content -->
+</div><!-- /.dashboard-container -->
+
+<script>
+/* ================================================================
+   FixPoint Dashboard — Vanilla JS
+   ================================================================ */
+
+// ── Tab Switching (Admin only) ──────────────────────────────────────
+function switchTab(tab) {
+    var isIssues = (tab === 'issues');
+    var panelIssues = document.getElementById('panel-issues');
+    var panelUsers  = document.getElementById('panel-users');
+    var btnIssues   = document.getElementById('tab-btn-issues');
+    var btnUsers    = document.getElementById('tab-btn-users');
+
+    if (panelIssues) panelIssues.style.display = isIssues ? '' : 'none';
+    if (panelUsers)  panelUsers.style.display  = isIssues ? 'none' : '';
+    if (btnIssues) {
+        btnIssues.className = 'dashboard-tab' + (isIssues ? ' active' : '');
+        btnIssues.setAttribute('aria-selected', String(isIssues));
+    }
+    if (btnUsers) {
+        btnUsers.className = 'dashboard-tab' + (!isIssues ? ' active' : '');
+        btnUsers.setAttribute('aria-selected', String(!isIssues));
+    }
+}
+
+// ── Issue Row Filtering ─────────────────────────────────────────────
+function filterIssues() {
+    var searchEl   = document.getElementById('issue-search');
+    var statusEl   = document.getElementById('filter-status');
+    var categoryEl = document.getElementById('filter-category');
+    var priorityEl = document.getElementById('filter-priority');
+
+    var search   = searchEl   ? searchEl.value.toLowerCase().trim()   : '';
+    var status   = statusEl   ? statusEl.value   : 'ALL';
+    var category = categoryEl ? categoryEl.value : 'ALL';
+    var priority = priorityEl ? priorityEl.value : 'ALL';
+
+    var rows = document.querySelectorAll('#panel-issues .issue-row');
+    var visible = 0;
+
+    rows.forEach(function(row) {
+        var title    = (row.dataset.title    || '');
+        var desc     = (row.dataset.desc     || '');
+        var rStatus  = (row.dataset.status   || '');
+        var rCat     = (row.dataset.category || '');
+        var rPri     = (row.dataset.priority || '');
+
+        var matchSearch   = !search   || title.includes(search) || desc.includes(search);
+        var matchStatus   = (status   === 'ALL') || (rStatus  === status);
+        var matchCategory = (category === 'ALL') || (rCat     === category);
+        var matchPriority = (priority === 'ALL') || (rPri     === priority);
+
+        var show = matchSearch && matchStatus && matchCategory && matchPriority;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    var noMsg = document.getElementById('no-issues-msg');
+    if (noMsg) noMsg.style.display = (visible === 0) ? '' : 'none';
+}
+
+// ── User Row Expand / Collapse ──────────────────────────────────────
+function toggleUser(userId) {
+    var issuesDiv = document.getElementById('user-issues-' + userId);
+    var chevron   = document.getElementById('chevron-' + userId);
+    var btn       = document.getElementById('user-btn-' + userId);
+
+    if (!issuesDiv) return;
+
+    var isExpanded = (issuesDiv.style.display !== 'none');
+    issuesDiv.style.display = isExpanded ? 'none' : '';
+    if (chevron) chevron.textContent = isExpanded ? '+' : '−';
+    if (btn)     btn.setAttribute('aria-expanded', String(!isExpanded));
+}
+
+// ── User Panel Filtering ────────────────────────────────────────────
+function filterUsers() {
+    var searchEl   = document.getElementById('user-search');
+    var statusEl   = document.getElementById('user-filter-status');
+    var priorityEl = document.getElementById('user-filter-priority');
+
+    var search   = searchEl   ? searchEl.value.toLowerCase().trim() : '';
+    var status   = statusEl   ? statusEl.value   : 'ALL';
+    var priority = priorityEl ? priorityEl.value : 'ALL';
+
+    var noFilters = (!search && status === 'ALL' && priority === 'ALL');
+    var groups    = document.querySelectorAll('.user-group');
+    var visibleGroups = 0;
+
+    groups.forEach(function(group) {
+        // Reset all sub-rows if no filters active
+        if (noFilters) {
+            group.style.display = '';
+            group.querySelectorAll('.user-issue-row').forEach(function(r) {
+                r.style.display = '';
+            });
+            visibleGroups++;
+            return;
+        }
+
+        var name  = (group.dataset.name  || '');
+        var email = (group.dataset.email || '');
+        var nameEmailMatch = !search || name.includes(search) || email.includes(search);
+
+        // Filter sub-rows by issue filters
+        var issueRows     = group.querySelectorAll('.user-issue-row');
+        var visibleIssues = 0;
+
+        issueRows.forEach(function(row) {
+            var title   = (row.dataset.title    || '');
+            var rStatus = (row.dataset.status   || '');
+            var rPri    = (row.dataset.priority || '');
+
+            var matchSearch   = !search || nameEmailMatch || title.includes(search);
+            var matchStatus   = (status   === 'ALL') || (rStatus === status);
+            var matchPriority = (priority === 'ALL') || (rPri    === priority);
+
+            var show = matchSearch && matchStatus && matchPriority;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleIssues++;
+        });
+
+        // Decide if the user group itself should show
+        var hasIssueFilters = (status !== 'ALL' || priority !== 'ALL');
+        var showGroup;
+        if (hasIssueFilters) {
+            showGroup = (visibleIssues > 0);
+        } else {
+            showGroup = nameEmailMatch;
+        }
+
+        group.style.display = showGroup ? '' : 'none';
+        if (showGroup) visibleGroups++;
+    });
+
+    var noUsersMsg = document.getElementById('no-users-msg');
+    if (noUsersMsg) noUsersMsg.style.display = (visibleGroups === 0) ? '' : 'none';
+}
+
+// ── Export Stub ─────────────────────────────────────────────────────
+function exportIssues() {
+    alert('Export functionality coming soon.');
+}
+</script>
 
 </body>
 </html>

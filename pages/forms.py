@@ -1,17 +1,22 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from fixpoint_backend.users.models import Role, DEPARTMENT_CHOICES
+
+User = get_user_model()
 
 
 class RegisterForm(forms.Form):
     first_name = forms.CharField(max_length=30)
     last_name = forms.CharField(max_length=30)
     email = forms.EmailField()
+    department = forms.ChoiceField(choices=DEPARTMENT_CHOICES, required=False)
+    role = forms.ModelChoiceField(queryset=Role.objects.all(), required=False)
     password = forms.CharField(widget=forms.PasswordInput, min_length=8)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
-        if User.objects.filter(username=email).exists():
+        if User.objects.filter(email=email).exists():
             raise forms.ValidationError("An account with this email already exists.")
         return email
 

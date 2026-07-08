@@ -45,12 +45,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'storages',        # for Supabase Storage (install: pip install django-storages boto3)
     'pages',
+    'fixpoint_backend.users',
+    'fixpoint_backend.issues',
+    'fixpoint_backend.attachments',
+    'fixpoint_backend.comments',
+    'fixpoint_backend.notifications',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -131,3 +136,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
+# Supabase Storage (S3-compatible) — set these in .env when ready
+_SUPABASE_STORAGE_KEY = config('SUPABASE_STORAGE_KEY', default=None)
+_SUPABASE_STORAGE_SECRET = config('SUPABASE_STORAGE_SECRET', default=None)
+_SUPABASE_STORAGE_URL = config('SUPABASE_STORAGE_URL', default=None)
+_SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='attachments')
+
+if _SUPABASE_STORAGE_KEY and _SUPABASE_STORAGE_SECRET and _SUPABASE_STORAGE_URL:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = _SUPABASE_STORAGE_KEY
+    AWS_SECRET_ACCESS_KEY = _SUPABASE_STORAGE_SECRET
+    AWS_STORAGE_BUCKET_NAME = _SUPABASE_STORAGE_BUCKET
+    AWS_S3_ENDPOINT_URL = _SUPABASE_STORAGE_URL
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'
+    MEDIA_URL = f"{_SUPABASE_STORAGE_URL}/storage/v1/object/public/{_SUPABASE_STORAGE_BUCKET}/"
+else:
+    # Fallback to local media during development (before Supabase Storage is configured)
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
