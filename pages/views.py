@@ -2,8 +2,10 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
 
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, IssueForm
 
 User = get_user_model()
 
@@ -82,8 +84,8 @@ def dashboard(request):
     if request.user.is_staff:
         users_with_issues = (
             User.objects
-                .prefetch_related('issues')
-                .order_by('first_name', 'last_name')
+            .prefetch_related('issues')
+            .order_by('first_name', 'last_name')
         )
 
     return render(request, 'pages/dashboard.html', {
@@ -91,6 +93,140 @@ def dashboard(request):
         'stats': stats,
         'users_with_issues': users_with_issues,
     })
+
+
+@login_required(login_url='/')
+def create_issue(request):
+    from fixpoint_backend.issues.models import Issue
+
+    if request.method == 'POST':
+        form = IssueForm(request.POST, request.FILES)
+        if form.is_valid():
+            issue = form.save(commit=False)
+            issue.user = request.user
+            issue.save()
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Issue created successfully!',
+                    'issue_id': issue.issueID,  # ✅ Changed from issue.id to issue.issueID
+                })
+
+            messages.success(request, 'Issue created successfully!')
+            return redirect('issue_detail', issue_id=issue.issueID)  # ✅ Changed from issue.id to issue.issueID
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                }, status=400)
+
+    else:
+        form = IssueForm()
+
+    return render(request, 'pages/create_issue.html', {
+        'form': form,
+        'user': request.user,
+    })
+
+
+@login_required(login_url='/')
+def issue_detail(request, issue_id):
+    from fixpoint_backend.issues.models import Issue
+
+    issue = get_object_or_404(Issue, issueID=issue_id)  # ✅ Using issueID, not id
+
+    # Check permissions
+    if not request.user.is_staff and issue.user != request.user:
+        messages.error(request, 'You do not have permission to view this issue.')
+        return redirect('dashboard')
+
+    return render(request, 'pages/issue_detail.html', {
+        'issue': issue,
+    })
+
+
+@login_required(login_url='/')
+def add_comment(request, issue_id):
+    from fixpoint_backend.issues.models import Issue
+    from fixpoint_backend.comments.models import Comment
+
+    issue = get_object_or_404(Issue, issueID=issue_id)
+
+    # Check permissions
+    if not request.user.is_staff and issue.user != request.user:
+        messages.error(request, 'You do not have permission to comment on this issue.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if content:
+            comment = Comment.objects.create(
+                issue=issue,
+                user=request.user,
+                content=content
+            )
+            messages.success(request, 'Comment added successfully!')
+        else:
+            messages.error(request, 'Comment cannot be empty.')
+
+    return redirect('issue_detail', issue_id=issue_id)
+
+
+@login_required(login_url='/')
+def update_status(request, issue_id):
+    from fixpoint_backend.issues.models import Issue
+
+    if not request.user.is_staff:
+        messages.error(request, 'Only admins can update status.')
+        return redirect('issue_detail', issue_id=issue_id)
+
+    issue = get_object_or_404(Issue, issueID=issue_id)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['open', 'in_progress', 'resolved', 'closed']:
+            issue.status = new_status
+            issue.save()
+            messages.success(request, f'Status updated to {issue.get_status_display()}.')
+        else:
+            messages.error(request, 'Invalid status.')
+
+    return redirect('issue_detail', issue_id=issue_id)
+
+
+@login_required(login_url='/')
+def request_deletion(request, issue_id):
+    from fixpoint_backend.issues.models import Issue
+    #from fixpoint_backend.delete_requests.models import DeleteRequest  # If you have this model
+
+    issue = get_object_or_404(Issue, issueID=issue_id)
+
+    # Only the issue owner can request deletion
+    if issue.user != request.user:
+        messages.error(request, 'You do not have permission to request deletion of this issue.')
+        return redirect('issue_detail', issue_id=issue_id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        if reason:
+            # Check if a delete request already exists
+            existing = DeleteRequest.objects.filter(issue=issue, status='pending').first()
+            if existing:
+                messages.error(request, 'A deletion request is already pending for this issue.')
+            else:
+                DeleteRequest.objects.create(
+                    issue=issue,
+                    requested_by=request.user,
+                    reason=reason,
+                    status='pending'
+                )
+                messages.success(request, 'Deletion request submitted successfully! An admin will review it shortly.')
+        else:
+            messages.error(request, 'Please provide a reason for deletion.')
+
+    return redirect('issue_detail', issue_id=issue_id)
 
 
 def logout_view(request):

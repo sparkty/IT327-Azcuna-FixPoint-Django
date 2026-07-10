@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from fixpoint_backend.users.models import Role, DEPARTMENT_CHOICES
+from fixpoint_backend.issues.models import Issue
 
 User = get_user_model()
 
@@ -32,3 +33,48 @@ class RegisterForm(forms.Form):
 class LoginForm(forms.Form):
     email = forms.EmailField()
     password = forms.CharField(widget=forms.PasswordInput)
+
+
+class IssueForm(forms.ModelForm):
+    class Meta:
+        model = Issue
+        fields = ['title', 'category', 'priority', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Brief, descriptive title for the issue…'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-input'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-input'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'rows': 5,
+                'placeholder': 'Describe the issue in detail. Include steps to reproduce, expected behavior, and actual behavior…'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set default priority
+        if not self.instance.pk:
+            self.fields['priority'].initial = 'MEDIUM'
+
+        # Category choices
+        self.fields['category'].choices = [
+            ('', 'Select category…'),
+            ('TECHNICAL', 'Technical'),
+            ('BILLING', 'Billing'),
+            ('GENERAL', 'General'),
+            ('OTHER', 'Other'),
+        ]
+
+        # Priority choices
+        self.fields['priority'].choices = [
+            ('LOW', 'Low'),
+            ('MEDIUM', 'Medium'),
+            ('HIGH', 'High'),
+        ]

@@ -39,8 +39,11 @@
             <aside class="sidebar" role="complementary" aria-label="Sidebar navigation">
                 <div class="sidebar-section">
                     <div class="sidebar-label">Navigation</div>
-                    <a href="{% url 'dashboard' %}" class="sidebar-link active" id="nav-dashboard">
+                    <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-dashboard">
                         <span class="sidebar-icon">◈</span> Dashboard
+                    </a>
+                    <a href="{% url 'create_issue' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_issue' %}active{% endif %}" id="nav-create-issue">
+                        <span class="sidebar-icon">✚</span> New Issue
                     </a>
                     <a href="#" class="sidebar-link" id="nav-issues">
                         <span class="sidebar-icon">◉</span> My Issues
@@ -80,7 +83,7 @@
                     </div>
                     <div class="topbar-actions">
                         <button class="btn-sm ghost" id="export-btn" onclick="exportIssues()">Export</button>
-                        <a href="#" class="btn-sm primary" id="new-issue-btn">+ New Issue</a>
+                        <a href="{% url 'create_issue' %}" class="btn-sm primary" id="new-issue-btn">+ New Issue</a>
                     </div>
                 </div>
 

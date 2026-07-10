@@ -3,26 +3,25 @@ from django.conf import settings
 
 
 CATEGORY_CHOICES = [
-    ('bug', 'Bug'),
-    ('feature', 'Feature Request'),
-    ('performance', 'Performance'),
-    ('security', 'Security'),
-    ('other', 'Other'),
+    ('TECHNICAL', 'Technical'),
+    ('BILLING', 'Billing'),
+    ('GENERAL', 'General'),
+    ('OTHER', 'Other'),
 ]
 
 PRIORITY_CHOICES = [
-    ('low', 'Low'),
-    ('medium', 'Medium'),
-    ('high', 'High'),
-    ('critical', 'Critical'),
+    ('LOW', 'Low'),
+    ('MEDIUM', 'Medium'),
+    ('HIGH', 'High'),
+    ('CRITICAL', 'Critical'),
 ]
 
 STATUS_CHOICES = [
-    ('open', 'Open'),
-    ('in_progress', 'In Progress'),
-    ('resolved', 'Resolved'),
-    ('closed', 'Closed'),
-    ('pending_deletion', 'Pending Deletion'),  # for Q3 — deletion request
+    ('PENDING', 'Pending'),
+    ('IN_PROGRESS', 'In Progress'),
+    ('RESOLVED', 'Resolved'),
+    ('CLOSED', 'Closed'),
+    ('PENDING_DELETION', 'Pending Deletion'),
 ]
 
 
@@ -36,8 +35,8 @@ class Issue(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='MEDIUM')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
