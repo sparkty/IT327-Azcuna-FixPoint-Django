@@ -10,4 +10,6 @@ urlpatterns = [
     path('issue/<int:issue_id>/add-comment/', views.add_comment, name='add_comment'),
     path('issue/<int:issue_id>/update-status/', views.update_status, name='update_status'),
     path('issue/<int:issue_id>/request-deletion/', views.request_deletion, name='request_deletion'),
+    path('deletion-request/<int:delete_request_id>/accept/', views.accept_deletion_request, name='accept_deletion_request'),
+    path('deletion-request/<int:delete_request_id>/cancel/', views.cancel_deletion_request, name='cancel_deletion_request'),
 ]

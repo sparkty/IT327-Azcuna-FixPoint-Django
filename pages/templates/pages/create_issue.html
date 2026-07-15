@@ -18,7 +18,7 @@
             <div class="nav-logo">⬡ FixPoint</div>
             <div class="nav-right">
                 <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                {% if request.user.is_staff %}
+                {% if request.user.is_superuser %}
                     <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
                 {% endif %}
                 <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
@@ -41,9 +41,6 @@
                     <a href="{% url 'create_issue' %}" class="sidebar-link active" id="nav-create-issue">
                         <span class="sidebar-icon">✚</span> New Issue
                     </a>
-                    <a href="#" class="sidebar-link" id="nav-issues">
-                        <span class="sidebar-icon">◉</span> My Issues
-                    </a>
                     <a href="#" class="sidebar-link" id="nav-notifications">
                         <span class="sidebar-icon">◎</span> Notifications
                     </a>
@@ -51,17 +48,6 @@
                         <span class="sidebar-icon">◌</span> Profile
                     </a>
                 </div>
-                {% if request.user.is_staff %}
-                <div class="sidebar-section sidebar-admin">
-                    <div class="sidebar-label">Admin</div>
-                    <a href="#" class="sidebar-link" id="nav-users">
-                        <span class="sidebar-icon">◈</span> Users
-                    </a>
-                    <a href="#" class="sidebar-link" id="nav-roles">
-                        <span class="sidebar-icon">◈</span> Roles
-                    </a>
-                </div>
-                {% endif %}
             </aside>
 
             <!-- Main Area -->

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'fixpoint_backend.issues',
     'fixpoint_backend.attachments',
     'fixpoint_backend.comments',
+    'fixpoint_backend.delete_requests',
     'fixpoint_backend.notifications',
 ]
 

@@ -19,7 +19,7 @@
             <div class="nav-logo">⬡ FixPoint</div>
             <div class="nav-right">
                 <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                {% if request.user.is_staff %}
+                {% if request.user.is_superuser %}
                     <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
                 {% endif %}
                 <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
@@ -40,9 +40,6 @@
                     <a href="{% url 'create_issue' %}" class="sidebar-link" id="nav-create-issue">
                         <span class="sidebar-icon">✚</span> New Issue
                     </a>
-                    <a href="#" class="sidebar-link" id="nav-issues">
-                        <span class="sidebar-icon">◉</span> My Issues
-                    </a>
                     <a href="#" class="sidebar-link" id="nav-notifications">
                         <span class="sidebar-icon">◎</span> Notifications
                     </a>
@@ -50,17 +47,7 @@
                         <span class="sidebar-icon">◌</span> Profile
                     </a>
                 </div>
-                {% if request.user.is_staff %}
-                <div class="sidebar-section sidebar-admin">
-                    <div class="sidebar-label">Admin</div>
-                    <a href="#" class="sidebar-link" id="nav-users">
-                        <span class="sidebar-icon">◈</span> Users
-                    </a>
-                    <a href="#" class="sidebar-link" id="nav-roles">
-                        <span class="sidebar-icon">◈</span> Roles
-                    </a>
-                </div>
-                {% endif %}
+
             </aside>
 
             <!-- Main Area -->
@@ -72,7 +59,7 @@
                     </div>
                     <div class="topbar-actions">
                         <a href="{% url 'dashboard' %}" class="btn-sm ghost">← Back</a>
-                        {% if request.user.is_staff %}
+                        {% if request.user.is_superuser %}
                             <a href="#" class="btn-sm ghost" id="edit-btn">Edit</a>
                         {% endif %}
                     </div>
@@ -97,14 +84,14 @@
                                 </div>
                                 <div class="issue-detail-title">{{ issue.title }}</div>
                                 <div class="issue-meta-row">
-                                    <div class="issue-meta-item">📁 {{ issue.get_category_display }}</div>
+                                    <div class="issue-meta-item">◫ {{ issue.get_category_display }}</div>
                                     <div class="issue-meta-item">
-                                        ⚡ <span style="color: {% if issue.priority == 'critical' or issue.priority == 'high' %}var(--accent){% else %}inherit{% endif %};">
+                                        ▲ <span style="color: {% if issue.priority == 'HIGH' %}var(--accent){% else %}inherit{% endif %};">
                                             {{ issue.get_priority_display }} Priority
                                         </span>
                                     </div>
-                                    <div class="issue-meta-item">👤 {{ issue.user.get_full_name }}</div>
-                                    <div class="issue-meta-item">🕐 Updated {{ issue.updatedAt|timesince }} ago</div>
+                                    <div class="issue-meta-item">◐ {{ issue.user.get_full_name }}</div>
+                                    <div class="issue-meta-item">◷ Updated {{ issue.updatedAt|timesince }} ago</div>
                                 </div>
                             </div>
 
@@ -116,13 +103,29 @@
                                 </div>
                             </div>
 
+                            <!-- Attachments Card -->
+                            {% if issue.attachments.all %}
+                            <div class="form-card">
+                                <div class="form-card-title">Attachments</div>
+                                <div class="attachments-list">
+                                    {% for attachment in issue.attachments.all %}
+                                    <div class="attachment-chip">
+                                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">
+                                            ▤ {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <!-- Activity Timeline Card -->
                             <div class="form-card">
                                 <div class="form-card-title">Activity Timeline</div>
                                 <div class="timeline">
                                     <!-- Issue Created Event -->
                                     <div class="timeline-item">
-                                        <div class="timeline-dot red">📝</div>
+                                        <div class="timeline-dot red">◈</div>
                                         <div class="timeline-content">
                                             <div class="timeline-event">
                                                 Issue submitted by {{ issue.user.get_full_name }}
@@ -131,13 +134,10 @@
                                         </div>
                                     </div>
 
-                                    <!-- Status Change Events (if you have status history) -->
-                                    <!-- You can add status history tracking later -->
-
                                     <!-- Comments -->
                                     {% for comment in issue.comments.all %}
                                     <div class="timeline-item">
-                                        <div class="timeline-dot">💬</div>
+                                        <div class="timeline-dot">◎</div>
                                         <div class="timeline-content">
                                             <div class="timeline-event">
                                                 <strong>{{ comment.user.get_full_name }}</strong> commented
@@ -186,8 +186,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- Status Update Dropdown (Admin only) -->
-                                    {% if request.user.is_staff %}
+                                    <!-- Status Update Dropdown (Admin only — UI hiding only; view.py must also enforce this) -->
+                                    {% if request.user.is_superuser %}
                                     <div class="preview-section">
                                         <div class="form-label">UPDATE STATUS</div>
                                         <form method="POST" action="{% url 'update_status' issue.issueID %}">
@@ -205,7 +205,7 @@
                                     <div class="preview-section">
                                         <div class="form-label">PRIORITY</div>
                                         <div class="preview-status" style="margin-top: 6px;">
-                                            <span class="badge {% if issue.priority == 'critical' or issue.priority == 'high' %}high{% elif issue.priority == 'medium' %}medium{% else %}low{% endif %}">
+                                            <span class="badge {% if issue.priority == 'HIGH' %}high{% elif issue.priority == 'MEDIUM' %}medium{% else %}low{% endif %}">
                                                 {{ issue.get_priority_display }}
                                             </span>
                                         </div>
@@ -236,10 +236,10 @@
                             </div>
 
                             <!-- Delete Request Section -->
-                            {% if not request.user.is_staff and issue.user == request.user %}
+                            {% if not request.user.is_superuser and issue.user == request.user %}
                             <div class="form-card" style="border-color: rgba(239,68,68,0.2); margin-top: 16px;">
                                 <div class="form-card-title">Danger Zone</div>
-                                <button class="btn-sm" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); width: 100%;" onclick="document.getElementById('delete-form').style.display='block'; this.style.display='none';">
+                                <button class="btn-sm danger" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); width: 100%;" onclick="document.getElementById('delete-form').style.display='block'; this.style.display='none';">
                                     Request Deletion
                                 </button>
                                 <form id="delete-form" method="POST" action="{% url 'request_deletion' issue.issueID %}" style="display: none; margin-top: 12px;">
@@ -262,9 +262,7 @@
 </div>
 
 <script>
-    // Add any JavaScript needed for the issue detail page
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle delete form toggle
         const deleteBtn = document.querySelector('.btn-sm.danger');
         if (deleteBtn) {
             deleteBtn.addEventListener('click', function() {

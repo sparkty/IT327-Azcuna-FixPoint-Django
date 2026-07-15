@@ -11,7 +11,6 @@ class RegisterForm(forms.Form):
     last_name = forms.CharField(max_length=30)
     email = forms.EmailField()
     department = forms.ChoiceField(choices=DEPARTMENT_CHOICES, required=False)
-    role = forms.ModelChoiceField(queryset=Role.objects.all(), required=False)
     password = forms.CharField(widget=forms.PasswordInput, min_length=8)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
 

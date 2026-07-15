@@ -27,7 +27,7 @@ DEPARTMENT_CHOICES = [
 
 class CustomUser(AbstractUser):
     # AbstractUser already has: id, username, first_name, last_name,
-    # email, password, is_staff, is_active, date_joined, last_login
+    # email, password, is_superuser, is_active, date_joined, last_login
     department = models.CharField(
         max_length=100,
         choices=DEPARTMENT_CHOICES,

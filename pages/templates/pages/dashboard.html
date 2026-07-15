@@ -22,7 +22,7 @@
             <div class="nav-logo">⬡ FixPoint</div>
             <div class="nav-right">
                 <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                {% if request.user.is_staff %}
+                {% if request.user.is_superuser %}
                     <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
                 {% endif %}
                 <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
@@ -45,9 +45,6 @@
                     <a href="{% url 'create_issue' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_issue' %}active{% endif %}" id="nav-create-issue">
                         <span class="sidebar-icon">✚</span> New Issue
                     </a>
-                    <a href="#" class="sidebar-link" id="nav-issues">
-                        <span class="sidebar-icon">◉</span> My Issues
-                    </a>
                     <a href="#" class="sidebar-link" id="nav-notifications">
                         <span class="sidebar-icon">◎</span> Notifications
                     </a>
@@ -55,17 +52,7 @@
                         <span class="sidebar-icon">◌</span> Profile
                     </a>
                 </div>
-                {% if request.user.is_staff %}
-                <div class="sidebar-section sidebar-admin">
-                    <div class="sidebar-label">Admin</div>
-                    <a href="#" class="sidebar-link" id="nav-users">
-                        <span class="sidebar-icon">◈</span> Users
-                    </a>
-                    <a href="#" class="sidebar-link" id="nav-roles">
-                        <span class="sidebar-icon">◈</span> Roles
-                    </a>
-                </div>
-                {% endif %}
+
             </aside>
 
             <!--
@@ -77,7 +64,7 @@
                 <div class="app-topbar">
                     <div>
                         <h1 class="page-title">
-                            {% if request.user.is_staff %}All Issues{% else %}My Issues{% endif %}
+                            {% if request.user.is_superuser %}All Issues{% else %}My Issues{% endif %}
                         </h1>
                         <div class="page-sub">Track and manage your reported issues</div>
                     </div>
@@ -114,8 +101,8 @@
                         </div>
                     </div>
 
-                    <!-- ── Admin: Issues / Users Tabs ─────────────── -->
-                    {% if request.user.is_staff %}
+                    <!-- ── Dashboard Tabs ──────────────────────────── -->
+                    {% if request.user.is_superuser %}
                     <div class="dashboard-tabs" role="tablist" aria-label="Dashboard tabs">
                         <button class="dashboard-tab active"
                                 id="tab-btn-issues"
@@ -124,17 +111,33 @@
                                 aria-controls="panel-issues"
                                 onclick="switchTab('issues')">Issues</button>
                         <button class="dashboard-tab"
+                                id="tab-btn-my-issues"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="panel-my-issues"
+                                onclick="switchTab('my-issues')">My Issues</button>
+                        <button class="dashboard-tab"
                                 id="tab-btn-users"
                                 role="tab"
                                 aria-selected="false"
                                 aria-controls="panel-users"
                                 onclick="switchTab('users')">Users</button>
                     </div>
+                    {% else %}
+                    <div class="dashboard-tabs" role="tablist" aria-label="Dashboard tabs">
+                        <button class="dashboard-tab active"
+                                id="tab-btn-my-issues"
+                                role="tab"
+                                aria-selected="true"
+                                aria-controls="panel-my-issues"
+                                onclick="switchTab('my-issues')">My Issues</button>
+                    </div>
                     {% endif %}
 
                     <!-- ════════════════════════════════════════════
-                         ISSUES PANEL
+                         ISSUES PANEL (Admin only — all issues)
                     ════════════════════════════════════════════ -->
+                    {% if request.user.is_superuser %}
                     <div id="panel-issues" role="tabpanel" aria-labelledby="tab-btn-issues">
 
                         <!-- Filter Bar -->
@@ -161,27 +164,195 @@
                                     onchange="filterIssues()"
                                     aria-label="Filter by category">
                                 <option value="ALL">All Categories</option>
-                                <option value="bug">Bug</option>
-                                <option value="feature">Feature Request</option>
-                                <option value="performance">Performance</option>
-                                <option value="security">Security</option>
-                                <option value="other">Other</option>
+                                <option value="TECHNICAL">Technical</option>
+                                <option value="BILLING">Billing</option>
+                                <option value="GENERAL">General</option>
+                                <option value="OTHER">Other</option>
                             </select>
                             <select id="filter-priority"
                                     class="filter-select"
                                     onchange="filterIssues()"
                                     aria-label="Filter by priority">
                                 <option value="ALL">All Priority</option>
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
                             </select>
                         </div>
 
-                        <!-- Issues Table -->
-                        <div class="issues-table" role="table" aria-label="Issues list">
-                            <!-- Table Header -->
+                        <!-- Issues Table + Deletion Requests side-by-side -->
+                        <div style="display:flex; gap:16px; align-items:flex-start;">
+
+                            <!-- Issues Table -->
+                            <div class="issues-table" role="table" aria-label="Issues list" style="flex:1; min-width:0;">
+                                <!-- Table Header -->
+                                <div class="table-header" role="row">
+                                    <div class="th" role="columnheader">#</div>
+                                    <div class="th" role="columnheader">ISSUE</div>
+                                    <div class="th" role="columnheader">CATEGORY</div>
+                                    <div class="th" role="columnheader">PRIORITY</div>
+                                    <div class="th" role="columnheader">STATUS</div>
+                                    <div class="th" role="columnheader">CREATED</div>
+                                </div>
+
+                                {% for issue in issues %}
+                                <div class="issue-row"
+                                     role="row"
+                                     id="issue-row-{{ issue.issueID }}"
+                                     data-title="{{ issue.title|lower }}"
+                                     data-desc="{{ issue.description|lower|slice:':200' }}"
+                                     data-status="{{ issue.status }}"
+                                     data-category="{{ issue.category }}"
+                                     data-priority="{{ issue.priority }}"
+                                     onclick="window.location='{% url 'issue_detail' issue.issueID %}'"
+                                     tabindex="0"
+                                     onkeydown="if(event.key==='Enter')window.location='{% url 'issue_detail' issue.issueID %}'">
+                                    <div class="issue-id" role="cell">#{{ issue.issueID }}</div>
+                                    <div class="issue-title-cell" role="cell">
+                                        <div class="issue-title-text">{{ issue.title }}</div>
+                                        <div class="issue-desc">{{ issue.description|slice:':120' }}{% if issue.description|length > 120 %}…{% endif %}</div>
+                                    </div>
+                                    <div role="cell">
+                                        <span class="badge low">{{ issue.get_category_display }}</span>
+                                    </div>
+                                    <div role="cell">
+                                        {% if issue.priority == 'HIGH' %}
+                                            <span class="badge high">{{ issue.get_priority_display }}</span>
+                                        {% elif issue.priority == 'MEDIUM' %}
+                                            <span class="badge medium">{{ issue.get_priority_display }}</span>
+                                        {% else %}
+                                            <span class="badge low">{{ issue.get_priority_display }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div role="cell">
+                                        {% if issue.status == 'open' %}
+                                            <span class="badge pending">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'in_progress' %}
+                                            <span class="badge inprogress">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                            <span class="badge resolved">{{ issue.get_status_display }}</span>
+                                        {% elif issue.status == 'pending_deletion' %}
+                                            <span class="badge deletion">{{ issue.get_status_display }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="issue-date" role="cell">{{ issue.createdAt|date:"M d, Y" }}</div>
+                                </div>
+                                {% empty %}
+                                <div class="no-issues" id="no-issues-empty">
+                                    No issues found. Click &ldquo;+ New Issue&rdquo; to create one.
+                                </div>
+                                {% endfor %}
+
+                                {% if issues %}
+                                <div id="no-issues-msg" style="display:none;" class="no-issues">
+                                    No issues match your filters. Try adjusting the search or filters above.
+                                </div>
+                                {% endif %}
+                            </div><!-- /.issues-table -->
+
+                            <!-- Deletion Requests Sidebar -->
+                            <div style="width:260px; flex-shrink:0; background:var(--surface,#141720); border:1px solid var(--border,#252a3a); border-radius:8px; padding:14px;">
+                                <div style="font-family:var(--mono,monospace); font-size:11px; letter-spacing:0.05em; color:var(--text2,#8892a4); margin-bottom:10px;">
+                                    DELETION REQUESTS
+                                </div>
+                                {% if pending_deletion_requests %}
+                                    {% for dr in pending_deletion_requests %}
+                                    <button type="button"
+                                            class="deletion-request-card"
+                                            onclick="openDeletionModal({{ dr.deleteRequestID }}, '{{ dr.issue.title|escapejs }}', '{{ dr.requested_by.get_full_name|escapejs }}', '{{ dr.reason|escapejs }}')"
+                                            style="display:flex; align-items:flex-start; gap:8px; width:100%; text-align:left; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:10px; margin-bottom:8px; cursor:pointer; color:inherit;">
+                                        <span style="color:#ef4444; font-weight:700; font-size:14px; line-height:1;">!</span>
+                                        <span style="font-size:12px;">
+                                            <div style="font-weight:600;">#{{ dr.issue.issueID }} — {{ dr.issue.title|truncatechars:28 }}</div>
+                                            <div style="color:var(--text2,#8892a4); font-size:11px; margin-top:2px;">Requested by {{ dr.requested_by.get_full_name }}</div>
+                                        </span>
+                                    </button>
+                                    {% endfor %}
+                                {% else %}
+                                    <div style="font-size:12px; color:var(--text3,#4a5568);">No pending deletion requests.</div>
+                                {% endif %}
+                            </div><!-- /.deletion-requests-sidebar -->
+
+                        </div><!-- /flex wrapper -->
+                    </div><!-- /#panel-issues -->
+                    {% endif %}
+
+                    <!-- Deletion Request Modal (Admin only) -->
+                    {% if request.user.is_superuser %}
+                    <div id="deletion-modal-backdrop"
+                         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; align-items:center; justify-content:center;"
+                         onclick="if(event.target===this) closeDeletionModal()">
+                        <div style="background:var(--surface,#141720); border:1px solid var(--border,#252a3a); border-radius:8px; padding:24px; width:400px; max-width:90vw;">
+                            <div style="font-family:var(--mono,monospace); font-weight:700; font-size:15px; margin-bottom:6px;">
+                                Deletion Request — <span id="modal-issue-title"></span>
+                            </div>
+                            <div style="font-size:12px; color:var(--text2,#8892a4); margin-bottom:14px;">
+                                Requested by <span id="modal-requester-name"></span>
+                            </div>
+                            <div style="font-size:11px; font-family:var(--mono,monospace); color:var(--text2,#8892a4); letter-spacing:0.05em; margin-bottom:6px;">REASON</div>
+                            <div id="modal-reason-text" style="font-size:13px; background:var(--surface2,#1c2030); border:1px solid var(--border,#252a3a); border-radius:6px; padding:10px; margin-bottom:20px; max-height:160px; overflow-y:auto;"></div>
+
+                            <form id="deletion-accept-form" method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-sm" style="background:#ef4444; color:#fff; border:1px solid #ef4444;">Accept Deletion</button>
+                            </form>
+                            <form id="deletion-cancel-form" method="POST" style="display:inline; margin-left:8px;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-sm ghost">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ════════════════════════════════════════════
+                         MY ISSUES PANEL (everyone — own issues only)
+                    ════════════════════════════════════════════ -->
+                    <div id="panel-my-issues"
+                         style="{% if request.user.is_superuser %}display:none;{% endif %}"
+                         role="tabpanel" aria-labelledby="tab-btn-my-issues">
+
+                        <!-- Filter Bar -->
+                        <div class="filter-bar" role="search" aria-label="Filter my issues">
+                            <input type="text"
+                                   id="my-issue-search"
+                                   class="search-input"
+                                   placeholder="Search your issues by title, description…"
+                                   oninput="filterMyIssues()"
+                                   aria-label="Search my issues">
+                            <select id="my-filter-status"
+                                    class="filter-select"
+                                    onchange="filterMyIssues()"
+                                    aria-label="Filter by status">
+                                <option value="ALL">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                                <option value="pending_deletion">Pending Deletion</option>
+                            </select>
+                            <select id="my-filter-category"
+                                    class="filter-select"
+                                    onchange="filterMyIssues()"
+                                    aria-label="Filter by category">
+                                <option value="ALL">All Categories</option>
+                                <option value="TECHNICAL">Technical</option>
+                                <option value="BILLING">Billing</option>
+                                <option value="GENERAL">General</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <select id="my-filter-priority"
+                                    class="filter-select"
+                                    onchange="filterMyIssues()"
+                                    aria-label="Filter by priority">
+                                <option value="ALL">All Priority</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                            </select>
+                        </div>
+
+                        <!-- My Issues Table -->
+                        <div class="issues-table" role="table" aria-label="My issues list">
                             <div class="table-header" role="row">
                                 <div class="th" role="columnheader">#</div>
                                 <div class="th" role="columnheader">ISSUE</div>
@@ -191,18 +362,18 @@
                                 <div class="th" role="columnheader">CREATED</div>
                             </div>
 
-                            {% for issue in issues %}
+                            {% for issue in my_issues %}
                             <div class="issue-row"
                                  role="row"
-                                 id="issue-row-{{ issue.issueID }}"
+                                 id="my-issue-row-{{ issue.issueID }}"
                                  data-title="{{ issue.title|lower }}"
                                  data-desc="{{ issue.description|lower|slice:':200' }}"
                                  data-status="{{ issue.status }}"
                                  data-category="{{ issue.category }}"
                                  data-priority="{{ issue.priority }}"
-                                 onclick="window.location='#'"
+                                 onclick="window.location='{% url 'issue_detail' issue.issueID %}'"
                                  tabindex="0"
-                                 onkeydown="if(event.key==='Enter')window.location='#'">
+                                 onkeydown="if(event.key==='Enter')window.location='{% url 'issue_detail' issue.issueID %}'">
                                 <div class="issue-id" role="cell">#{{ issue.issueID }}</div>
                                 <div class="issue-title-cell" role="cell">
                                     <div class="issue-title-text">{{ issue.title }}</div>
@@ -212,9 +383,9 @@
                                     <span class="badge low">{{ issue.get_category_display }}</span>
                                 </div>
                                 <div role="cell">
-                                    {% if issue.priority == 'critical' or issue.priority == 'high' %}
+                                    {% if issue.priority == 'HIGH' %}
                                         <span class="badge high">{{ issue.get_priority_display }}</span>
-                                    {% elif issue.priority == 'medium' %}
+                                    {% elif issue.priority == 'MEDIUM' %}
                                         <span class="badge medium">{{ issue.get_priority_display }}</span>
                                     {% else %}
                                         <span class="badge low">{{ issue.get_priority_display }}</span>
@@ -234,23 +405,23 @@
                                 <div class="issue-date" role="cell">{{ issue.createdAt|date:"M d, Y" }}</div>
                             </div>
                             {% empty %}
-                            <div class="no-issues" id="no-issues-empty">
-                                No issues found. Click &ldquo;+ New Issue&rdquo; to create one.
+                            <div class="no-issues" id="my-no-issues-empty">
+                                You haven't reported any issues yet. Click &ldquo;+ New Issue&rdquo; to create one.
                             </div>
                             {% endfor %}
 
-                            {% if issues %}
-                            <div id="no-issues-msg" style="display:none;" class="no-issues">
+                            {% if my_issues %}
+                            <div id="my-no-issues-msg" style="display:none;" class="no-issues">
                                 No issues match your filters. Try adjusting the search or filters above.
                             </div>
                             {% endif %}
                         </div><!-- /.issues-table -->
-                    </div><!-- /#panel-issues -->
+                    </div><!-- /#panel-my-issues -->
 
                     <!-- ════════════════════════════════════════════
                          USERS PANEL  (Admin only)
                     ════════════════════════════════════════════ -->
-                    {% if request.user.is_staff %}
+                    {% if request.user.is_superuser %}
                     <div id="panel-users" style="display:none;" role="tabpanel" aria-labelledby="tab-btn-users">
 
                         <!-- User Filter Bar -->
@@ -277,10 +448,9 @@
                                     onchange="filterUsers()"
                                     aria-label="Filter user issues by priority">
                                 <option value="ALL">All Priority</option>
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
                             </select>
                         </div>
 
@@ -305,7 +475,7 @@
                                         <div class="user-name">{{ user_obj.get_full_name }}</div>
                                         <div class="user-email">{{ user_obj.email }}</div>
                                     </div>
-                                    {% if user_obj.is_staff %}
+                                    {% if user_obj.is_superuser %}
                                         <span class="badge high">Admin</span>
                                     {% else %}
                                         <span class="badge low">User</span>
@@ -326,16 +496,16 @@
                                             data-title="{{ issue.title|lower }}"
                                             data-priority="{{ issue.priority }}"
                                             data-status="{{ issue.status }}"
-                                            onclick="window.location='#'">
+                                            onclick="window.location='{% url 'issue_detail' issue.issueID %}'">
                                         <div class="issue-id">#{{ issue.issueID }}</div>
                                         <div class="issue-title-cell">
                                             <div class="issue-title-text">{{ issue.title }}</div>
                                             <div class="issue-desc">{{ issue.description|slice:':100' }}{% if issue.description|length > 100 %}…{% endif %}</div>
                                         </div>
                                         <span class="badge low">{{ issue.get_category_display }}</span>
-                                        {% if issue.priority == 'critical' or issue.priority == 'high' %}
+                                        {% if issue.priority == 'HIGH' %}
                                             <span class="badge high">{{ issue.get_priority_display }}</span>
-                                        {% elif issue.priority == 'medium' %}
+                                        {% elif issue.priority == 'MEDIUM' %}
                                             <span class="badge medium">{{ issue.get_priority_display }}</span>
                                         {% else %}
                                             <span class="badge low">{{ issue.get_priority_display }}</span>
@@ -378,27 +548,34 @@
    FixPoint Dashboard — Vanilla JS
    ================================================================ */
 
-// ── Tab Switching (Admin only) ──────────────────────────────────────
+// ── Tab Switching ────────────────────────────────────────────────
 function switchTab(tab) {
-    var isIssues = (tab === 'issues');
-    var panelIssues = document.getElementById('panel-issues');
-    var panelUsers  = document.getElementById('panel-users');
-    var btnIssues   = document.getElementById('tab-btn-issues');
-    var btnUsers    = document.getElementById('tab-btn-users');
+    var panelIssues   = document.getElementById('panel-issues');
+    var panelMyIssues = document.getElementById('panel-my-issues');
+    var panelUsers    = document.getElementById('panel-users');
+    var btnIssues     = document.getElementById('tab-btn-issues');
+    var btnMyIssues   = document.getElementById('tab-btn-my-issues');
+    var btnUsers      = document.getElementById('tab-btn-users');
 
-    if (panelIssues) panelIssues.style.display = isIssues ? '' : 'none';
-    if (panelUsers)  panelUsers.style.display  = isIssues ? 'none' : '';
+    if (panelIssues)   panelIssues.style.display   = (tab === 'issues')    ? '' : 'none';
+    if (panelMyIssues) panelMyIssues.style.display = (tab === 'my-issues') ? '' : 'none';
+    if (panelUsers)    panelUsers.style.display    = (tab === 'users')     ? '' : 'none';
+
     if (btnIssues) {
-        btnIssues.className = 'dashboard-tab' + (isIssues ? ' active' : '');
-        btnIssues.setAttribute('aria-selected', String(isIssues));
+        btnIssues.className = 'dashboard-tab' + (tab === 'issues' ? ' active' : '');
+        btnIssues.setAttribute('aria-selected', String(tab === 'issues'));
+    }
+    if (btnMyIssues) {
+        btnMyIssues.className = 'dashboard-tab' + (tab === 'my-issues' ? ' active' : '');
+        btnMyIssues.setAttribute('aria-selected', String(tab === 'my-issues'));
     }
     if (btnUsers) {
-        btnUsers.className = 'dashboard-tab' + (!isIssues ? ' active' : '');
-        btnUsers.setAttribute('aria-selected', String(!isIssues));
+        btnUsers.className = 'dashboard-tab' + (tab === 'users' ? ' active' : '');
+        btnUsers.setAttribute('aria-selected', String(tab === 'users'));
     }
 }
 
-// ── Issue Row Filtering ─────────────────────────────────────────────
+// ── Issue Row Filtering (Issues tab — admin, all issues) ────────────
 function filterIssues() {
     var searchEl   = document.getElementById('issue-search');
     var statusEl   = document.getElementById('filter-status');
@@ -434,6 +611,42 @@ function filterIssues() {
     if (noMsg) noMsg.style.display = (visible === 0) ? '' : 'none';
 }
 
+// ── Issue Row Filtering (My Issues tab — everyone, own issues) ──────
+function filterMyIssues() {
+    var searchEl   = document.getElementById('my-issue-search');
+    var statusEl   = document.getElementById('my-filter-status');
+    var categoryEl = document.getElementById('my-filter-category');
+    var priorityEl = document.getElementById('my-filter-priority');
+
+    var search   = searchEl   ? searchEl.value.toLowerCase().trim()   : '';
+    var status   = statusEl   ? statusEl.value   : 'ALL';
+    var category = categoryEl ? categoryEl.value : 'ALL';
+    var priority = priorityEl ? priorityEl.value : 'ALL';
+
+    var rows = document.querySelectorAll('#panel-my-issues .issue-row');
+    var visible = 0;
+
+    rows.forEach(function(row) {
+        var title    = (row.dataset.title    || '');
+        var desc     = (row.dataset.desc     || '');
+        var rStatus  = (row.dataset.status   || '');
+        var rCat     = (row.dataset.category || '');
+        var rPri     = (row.dataset.priority || '');
+
+        var matchSearch   = !search   || title.includes(search) || desc.includes(search);
+        var matchStatus   = (status   === 'ALL') || (rStatus  === status);
+        var matchCategory = (category === 'ALL') || (rCat     === category);
+        var matchPriority = (priority === 'ALL') || (rPri     === priority);
+
+        var show = matchSearch && matchStatus && matchCategory && matchPriority;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    var noMsg = document.getElementById('my-no-issues-msg');
+    if (noMsg) noMsg.style.display = (visible === 0) ? '' : 'none';
+}
+
 // ── User Row Expand / Collapse ──────────────────────────────────────
 function toggleUser(userId) {
     var issuesDiv = document.getElementById('user-issues-' + userId);
@@ -463,7 +676,6 @@ function filterUsers() {
     var visibleGroups = 0;
 
     groups.forEach(function(group) {
-        // Reset all sub-rows if no filters active
         if (noFilters) {
             group.style.display = '';
             group.querySelectorAll('.user-issue-row').forEach(function(r) {
@@ -477,7 +689,6 @@ function filterUsers() {
         var email = (group.dataset.email || '');
         var nameEmailMatch = !search || name.includes(search) || email.includes(search);
 
-        // Filter sub-rows by issue filters
         var issueRows     = group.querySelectorAll('.user-issue-row');
         var visibleIssues = 0;
 
@@ -495,7 +706,6 @@ function filterUsers() {
             if (show) visibleIssues++;
         });
 
-        // Decide if the user group itself should show
         var hasIssueFilters = (status !== 'ALL' || priority !== 'ALL');
         var showGroup;
         if (hasIssueFilters) {
@@ -515,6 +725,28 @@ function filterUsers() {
 // ── Export Stub ─────────────────────────────────────────────────────
 function exportIssues() {
     alert('Export functionality coming soon.');
+}
+
+// ── Deletion Request Modal ───────────────────────────────────────────
+function openDeletionModal(deleteRequestId, issueTitle, requesterName, reason) {
+    var backdrop = document.getElementById('deletion-modal-backdrop');
+    if (!backdrop) return;
+
+    document.getElementById('modal-issue-title').textContent = issueTitle;
+    document.getElementById('modal-requester-name').textContent = requesterName;
+    document.getElementById('modal-reason-text').textContent = reason;
+
+    var acceptForm = document.getElementById('deletion-accept-form');
+    var cancelForm = document.getElementById('deletion-cancel-form');
+    acceptForm.action = '/deletion-request/' + deleteRequestId + '/accept/';
+    cancelForm.action = '/deletion-request/' + deleteRequestId + '/cancel/';
+
+    backdrop.style.display = 'flex';
+}
+
+function closeDeletionModal() {
+    var backdrop = document.getElementById('deletion-modal-backdrop');
+    if (backdrop) backdrop.style.display = 'none';
 }
 </script>
 

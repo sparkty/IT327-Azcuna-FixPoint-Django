@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from fixpoint_backend.delete_requests.models import DeleteRequest
 
 from .forms import RegisterForm, LoginForm, IssueForm
 
@@ -29,7 +30,6 @@ def login_register(request):
                     first_name=data['first_name'],
                     last_name=data['last_name'],
                     department=data.get('department', ''),
-                    role=data.get('role'),
                     password=data['password'],
                 )
 
@@ -67,11 +67,12 @@ def login_register(request):
 def dashboard(request):
     from fixpoint_backend.issues.models import Issue
 
-    # Regular users see only their own issues; admins see all
-    if request.user.is_staff:
+    if request.user.is_superuser:
         issues = Issue.objects.all().select_related('user').order_by('-createdAt')
     else:
         issues = Issue.objects.filter(user=request.user).order_by('-createdAt')
+
+    my_issues = Issue.objects.filter(user=request.user).order_by('-createdAt')
 
     stats = {
         'total': issues.count(),
@@ -81,23 +82,33 @@ def dashboard(request):
     }
 
     users_with_issues = []
-    if request.user.is_staff:
+    pending_deletion_requests = []
+    if request.user.is_superuser:
         users_with_issues = (
             User.objects
             .prefetch_related('issues')
             .order_by('first_name', 'last_name')
         )
+        pending_deletion_requests = (
+            DeleteRequest.objects
+            .filter(status='pending')
+            .select_related('issue', 'requested_by')
+            .order_by('-created_at')
+        )
 
     return render(request, 'pages/dashboard.html', {
         'issues': issues,
+        'my_issues': my_issues,
         'stats': stats,
         'users_with_issues': users_with_issues,
+        'pending_deletion_requests': pending_deletion_requests,
     })
 
 
 @login_required(login_url='/')
 def create_issue(request):
     from fixpoint_backend.issues.models import Issue
+    from fixpoint_backend.attachments.models import Attachment
 
     if request.method == 'POST':
         form = IssueForm(request.POST, request.FILES)
@@ -106,15 +117,26 @@ def create_issue(request):
             issue.user = request.user
             issue.save()
 
+            # JS sends files as attachment_0, attachment_1, attachment_2, ...
+            for key, uploaded_file in request.FILES.items():
+                if key.startswith('attachment_'):
+                    Attachment.objects.create(
+                        issue=issue,
+                        file=uploaded_file,
+                        fileName=uploaded_file.name,
+                        fileType=uploaded_file.content_type or '',
+                        fileSize=uploaded_file.size,
+                    )
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
                     'message': 'Issue created successfully!',
-                    'issue_id': issue.issueID,  # ✅ Changed from issue.id to issue.issueID
+                    'issue_id': issue.issueID,
                 })
 
             messages.success(request, 'Issue created successfully!')
-            return redirect('issue_detail', issue_id=issue.issueID)  # ✅ Changed from issue.id to issue.issueID
+            return redirect('issue_detail', issue_id=issue.issueID)
         else:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -138,7 +160,7 @@ def issue_detail(request, issue_id):
     issue = get_object_or_404(Issue, issueID=issue_id)  # ✅ Using issueID, not id
 
     # Check permissions
-    if not request.user.is_staff and issue.user != request.user:
+    if not request.user.is_superuser and issue.user != request.user:
         messages.error(request, 'You do not have permission to view this issue.')
         return redirect('dashboard')
 
@@ -155,7 +177,7 @@ def add_comment(request, issue_id):
     issue = get_object_or_404(Issue, issueID=issue_id)
 
     # Check permissions
-    if not request.user.is_staff and issue.user != request.user:
+    if not request.user.is_superuser and issue.user != request.user:
         messages.error(request, 'You do not have permission to comment on this issue.')
         return redirect('dashboard')
 
@@ -178,7 +200,7 @@ def add_comment(request, issue_id):
 def update_status(request, issue_id):
     from fixpoint_backend.issues.models import Issue
 
-    if not request.user.is_staff:
+    if not request.user.is_superuser:
         messages.error(request, 'Only admins can update status.')
         return redirect('issue_detail', issue_id=issue_id)
 
@@ -199,7 +221,7 @@ def update_status(request, issue_id):
 @login_required(login_url='/')
 def request_deletion(request, issue_id):
     from fixpoint_backend.issues.models import Issue
-    #from fixpoint_backend.delete_requests.models import DeleteRequest  # If you have this model
+    from fixpoint_backend.delete_requests.models import DeleteRequest  # If you have this model
 
     issue = get_object_or_404(Issue, issueID=issue_id)
 
@@ -227,6 +249,39 @@ def request_deletion(request, issue_id):
             messages.error(request, 'Please provide a reason for deletion.')
 
     return redirect('issue_detail', issue_id=issue_id)
+
+@login_required(login_url='/')
+def accept_deletion_request(request, delete_request_id):
+    if not request.user.is_superuser:
+        messages.error(request, 'Only admins can approve deletion requests.')
+        return redirect('dashboard')
+
+    delete_request = get_object_or_404(DeleteRequest, deleteRequestID=delete_request_id)
+
+    if request.method == 'POST':
+        issue = delete_request.issue
+        delete_request.status = 'approved'
+        delete_request.save()
+        issue.delete()
+        messages.success(request, 'Issue deleted and request approved.')
+
+    return redirect('dashboard')
+
+
+@login_required(login_url='/')
+def cancel_deletion_request(request, delete_request_id):
+    if not request.user.is_superuser:
+        messages.error(request, 'Only admins can cancel deletion requests.')
+        return redirect('dashboard')
+
+    delete_request = get_object_or_404(DeleteRequest, deleteRequestID=delete_request_id)
+
+    if request.method == 'POST':
+        delete_request.status = 'rejected'
+        delete_request.save()
+        messages.success(request, 'Deletion request cancelled.')
+
+    return redirect('dashboard')
 
 
 def logout_view(request):
