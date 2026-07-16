@@ -14,23 +14,25 @@ from pathlib import Path
 from decouple import config
 import dj_database_url
 
-SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', default=False, cast=bool)
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def csv_config(name, default=''):
+    return [value.strip() for value in config(name, default=default).split(',') if value.strip()]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$u(yci4fi!tyx+51d_$_8=204gmpdbwc7h4bafmvoys6sa-+w*'
+SECRET_KEY = config('SECRET_KEY', default=config('DJANGO_SECRET_KEY', default=''))
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = csv_config(
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,.vercel.app',
+)
+CSRF_TRUSTED_ORIGINS = csv_config('CSRF_TRUSTED_ORIGINS')
 
 
 # Application definition
@@ -93,7 +95,7 @@ DATABASES = {
     'default': dj_database_url.parse(config('DATABASE_URL'))
 }
 
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+CORS_ALLOWED_ORIGINS = csv_config('CORS_ALLOWED_ORIGINS')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -141,6 +143,15 @@ LOGOUT_REDIRECT_URL = '/'  # Where to redirect after logout
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000 if not DEBUG else 0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -148,17 +159,40 @@ AUTH_USER_MODEL = 'users.CustomUser'
 _SUPABASE_STORAGE_KEY = config('SUPABASE_STORAGE_KEY', default=None)
 _SUPABASE_STORAGE_SECRET = config('SUPABASE_STORAGE_SECRET', default=None)
 _SUPABASE_STORAGE_URL = config('SUPABASE_STORAGE_URL', default=None)
+_SUPABASE_URL = config('SUPABASE_URL', default=None)
 _SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='attachments')
+_SUPABASE_STORAGE_PUBLIC = config('SUPABASE_STORAGE_PUBLIC', default=False, cast=bool)
 
 if _SUPABASE_STORAGE_KEY and _SUPABASE_STORAGE_SECRET and _SUPABASE_STORAGE_URL:
+    _SUPABASE_STORAGE_URL = _SUPABASE_STORAGE_URL.rstrip('/')
+    _SUPABASE_URL = _SUPABASE_URL.rstrip('/') if _SUPABASE_URL else None
+
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
     AWS_ACCESS_KEY_ID = _SUPABASE_STORAGE_KEY
     AWS_SECRET_ACCESS_KEY = _SUPABASE_STORAGE_SECRET
     AWS_STORAGE_BUCKET_NAME = _SUPABASE_STORAGE_BUCKET
     AWS_S3_ENDPOINT_URL = _SUPABASE_STORAGE_URL
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = 'public-read'
-    MEDIA_URL = f"{_SUPABASE_STORAGE_URL}/storage/v1/object/public/{_SUPABASE_STORAGE_BUCKET}/"
+    AWS_QUERYSTRING_AUTH = not _SUPABASE_STORAGE_PUBLIC
+
+    if _SUPABASE_STORAGE_PUBLIC and _SUPABASE_URL:
+        AWS_S3_CUSTOM_DOMAIN = (
+            f"{_SUPABASE_URL.replace('https://', '').replace('http://', '')}"
+            f"/storage/v1/object/public/{_SUPABASE_STORAGE_BUCKET}"
+        )
+        AWS_S3_URL_PROTOCOL = 'https:'
+        MEDIA_URL = f"{_SUPABASE_URL}/storage/v1/object/public/{_SUPABASE_STORAGE_BUCKET}/"
+    else:
+        MEDIA_URL = f"{_SUPABASE_STORAGE_URL}/{_SUPABASE_STORAGE_BUCKET}/"
 else:
     # Fallback to local media during development (before Supabase Storage is configured)
     MEDIA_URL = '/media/'

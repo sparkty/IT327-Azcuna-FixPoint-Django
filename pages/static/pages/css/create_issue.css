@@ -150,6 +150,22 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 52, 26, 0.16);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 /* ── App Topbar ──────────────────────────────────────────────────── */
 .app-topbar {
   padding: 16px 28px;

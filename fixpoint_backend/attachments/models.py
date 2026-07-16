@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.db import models
 
 
@@ -16,6 +18,14 @@ class Attachment(models.Model):
 
     def __str__(self):
         return self.fileName
+
+    @property
+    def is_image(self):
+        image_types = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+        file_type = (self.fileType or '').lower()
+        file_extension = Path(self.fileName or self.file.name).suffix.lower()
+        return file_type in image_types or file_extension in image_extensions
 
     class Meta:
         db_table = 'attachments'

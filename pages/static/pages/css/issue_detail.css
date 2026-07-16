@@ -154,6 +154,22 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 52, 26, 0.16);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 /* ── App Topbar ──────────────────────────────────────────────────── */
 .app-topbar {
   padding: 16px 28px;
@@ -324,6 +340,39 @@ body {
   font-size: 14px;
   line-height: 1.7;
   color: var(--text2);
+}
+
+.attachments-list {
+  display: grid;
+  gap: 12px;
+}
+
+.attachment-preview {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.attachment-image-link {
+  display: block;
+}
+
+.attachment-image {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: #050608;
+  border-radius: 6px;
+}
+
+.attachment-file-link {
+  color: var(--text2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 /* ── Timeline ────────────────────────────────────────────────────── */

@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Issue #{{ issue.issueID }} — FixPoint">
-    <title>Issue #{{ issue.issueID }} — FixPoint</title>
+    <meta name="description" content="Issue #{{ display_issue_number }} — FixPoint">
+    <title>Issue #{{ display_issue_number }} — FixPoint</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -40,8 +40,11 @@
                     <a href="{% url 'create_issue' %}" class="sidebar-link" id="nav-create-issue">
                         <span class="sidebar-icon">✚</span> New Issue
                     </a>
-                    <a href="#" class="sidebar-link" id="nav-notifications">
-                        <span class="sidebar-icon">◎</span> Notifications
+                    <a href="{% url 'notifications' %}" class="sidebar-link" id="nav-notifications">
+                        <span class="sidebar-icon">&#9678;</span> Notifications
+                        {% if unread_notifications_count %}
+                            <span class="sidebar-count">{{ unread_notifications_count }}</span>
+                        {% endif %}
                     </a>
                     <a href="#" class="sidebar-link" id="nav-profile">
                         <span class="sidebar-icon">◌</span> Profile
@@ -80,7 +83,7 @@
                             <!-- Issue Header -->
                             <div class="issue-detail-header">
                                 <div class="issue-detail-id">
-                                    ISSUE-{{ issue.issueID }} · Created {{ issue.createdAt|date:"M d, Y · H:i" }}
+                                    ISSUE-{{ display_issue_number }} · Created {{ issue.createdAt|date:"M d, Y · H:i" }}
                                 </div>
                                 <div class="issue-detail-title">{{ issue.title }}</div>
                                 <div class="issue-meta-row">
@@ -109,11 +112,22 @@
                                 <div class="form-card-title">Attachments</div>
                                 <div class="attachments-list">
                                     {% for attachment in issue.attachments.all %}
-                                    <div class="attachment-chip">
-                                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">
+                                    {% with file_url=attachment.file.url %}
+                                    <div class="{% if attachment.is_image %}attachment-preview{% else %}attachment-chip{% endif %}">
+                                        {% if attachment.is_image %}
+                                            <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-image-link">
+                                                <img src="{{ file_url }}" alt="{{ attachment.fileName }}" class="attachment-image">
+                                            </a>
+                                            <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-file-link">
+                                                {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
+                                            </a>
+                                        {% else %}
+                                        <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer">
                                             ▤ {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
                                         </a>
+                                        {% endif %}
                                     </div>
+                                    {% endwith %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -180,7 +194,7 @@
                                     <div>
                                         <div class="form-label">CURRENT STATUS</div>
                                         <div class="preview-status" style="margin-top: 6px;">
-                                            <span class="badge {% if issue.status == 'open' %}pending{% elif issue.status == 'in_progress' %}inprogress{% elif issue.status == 'resolved' or issue.status == 'closed' %}resolved{% else %}deletion{% endif %}">
+                                            <span class="badge {% if issue.status == 'PENDING' %}pending{% elif issue.status == 'IN_PROGRESS' %}inprogress{% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}resolved{% else %}deletion{% endif %}">
                                                 {{ issue.get_status_display }}
                                             </span>
                                         </div>
@@ -193,10 +207,10 @@
                                         <form method="POST" action="{% url 'update_status' issue.issueID %}">
                                             {% csrf_token %}
                                             <select class="status-select" name="status" onchange="this.form.submit()">
-                                                <option value="open" {% if issue.status == 'open' %}selected{% endif %}>Open</option>
-                                                <option value="in_progress" {% if issue.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                                                <option value="resolved" {% if issue.status == 'resolved' %}selected{% endif %}>Resolved</option>
-                                                <option value="closed" {% if issue.status == 'closed' %}selected{% endif %}>Closed</option>
+                                                <option value="PENDING" {% if issue.status == 'PENDING' %}selected{% endif %}>Open</option>
+                                                <option value="IN_PROGRESS" {% if issue.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                                                <option value="RESOLVED" {% if issue.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                                                <option value="CLOSED" {% if issue.status == 'CLOSED' %}selected{% endif %}>Closed</option>
                                             </select>
                                         </form>
                                     </div>

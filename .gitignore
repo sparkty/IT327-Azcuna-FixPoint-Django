@@ -209,6 +209,11 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Django deployment output
+staticfiles/
+media/
+/attachments/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

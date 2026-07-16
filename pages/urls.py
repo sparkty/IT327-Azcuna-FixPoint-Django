@@ -4,6 +4,10 @@ from . import views
 urlpatterns = [
     path('', views.login_register, name='login_register'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('notifications/', views.notifications, name='notifications'),
+    path('notifications/<int:notification_id>/open/', views.open_notification, name='open_notification'),
+    path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('notifications/delete-read/', views.delete_read_notifications, name='delete_read_notifications'),
     path('logout/', views.logout_view, name='logout'),
     path('create_issue/', views.create_issue, name='create_issue'),
     path('issue/<int:issue_id>/', views.issue_detail, name='issue_detail'),

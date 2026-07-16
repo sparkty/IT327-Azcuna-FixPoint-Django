@@ -45,8 +45,11 @@
                     <a href="{% url 'create_issue' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_issue' %}active{% endif %}" id="nav-create-issue">
                         <span class="sidebar-icon">✚</span> New Issue
                     </a>
-                    <a href="#" class="sidebar-link" id="nav-notifications">
-                        <span class="sidebar-icon">◎</span> Notifications
+                    <a href="{% url 'notifications' %}" class="sidebar-link" id="nav-notifications">
+                        <span class="sidebar-icon">&#9678;</span> Notifications
+                        {% if unread_notifications_count %}
+                            <span class="sidebar-count">{{ unread_notifications_count }}</span>
+                        {% endif %}
                     </a>
                     <a href="#" class="sidebar-link" id="nav-profile">
                         <span class="sidebar-icon">◌</span> Profile
@@ -153,11 +156,11 @@
                                     onchange="filterIssues()"
                                     aria-label="Filter by status">
                                 <option value="ALL">All Status</option>
-                                <option value="open">Open</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
-                                <option value="pending_deletion">Pending Deletion</option>
+                                <option value="PENDING">Open</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="RESOLVED">Resolved</option>
+                                <option value="CLOSED">Closed</option>
+                                <option value="PENDING_DELETION">Pending Deletion</option>
                             </select>
                             <select id="filter-category"
                                     class="filter-select"
@@ -225,13 +228,13 @@
                                         {% endif %}
                                     </div>
                                     <div role="cell">
-                                        {% if issue.status == 'open' %}
+                                        {% if issue.status == 'PENDING' %}
                                             <span class="badge pending">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'in_progress' %}
+                                        {% elif issue.status == 'IN_PROGRESS' %}
                                             <span class="badge inprogress">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                        {% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}
                                             <span class="badge resolved">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'pending_deletion' %}
+                                        {% elif issue.status == 'PENDING_DELETION' %}
                                             <span class="badge deletion">{{ issue.get_status_display }}</span>
                                         {% endif %}
                                     </div>
@@ -251,25 +254,24 @@
                             </div><!-- /.issues-table -->
 
                             <!-- Deletion Requests Sidebar -->
-                            <div style="width:260px; flex-shrink:0; background:var(--surface,#141720); border:1px solid var(--border,#252a3a); border-radius:8px; padding:14px;">
-                                <div style="font-family:var(--mono,monospace); font-size:11px; letter-spacing:0.05em; color:var(--text2,#8892a4); margin-bottom:10px;">
+                            <div class="deletion-requests-panel">
+                                <div class="deletion-requests-title">
                                     DELETION REQUESTS
                                 </div>
                                 {% if pending_deletion_requests %}
                                     {% for dr in pending_deletion_requests %}
                                     <button type="button"
                                             class="deletion-request-card"
-                                            onclick="openDeletionModal({{ dr.deleteRequestID }}, '{{ dr.issue.title|escapejs }}', '{{ dr.requested_by.get_full_name|escapejs }}', '{{ dr.reason|escapejs }}')"
-                                            style="display:flex; align-items:flex-start; gap:8px; width:100%; text-align:left; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:10px; margin-bottom:8px; cursor:pointer; color:inherit;">
-                                        <span style="color:#ef4444; font-weight:700; font-size:14px; line-height:1;">!</span>
-                                        <span style="font-size:12px;">
-                                            <div style="font-weight:600;">#{{ dr.issue.issueID }} — {{ dr.issue.title|truncatechars:28 }}</div>
-                                            <div style="color:var(--text2,#8892a4); font-size:11px; margin-top:2px;">Requested by {{ dr.requested_by.get_full_name }}</div>
+                                            onclick="openDeletionModal({{ dr.deleteRequestID }}, '{{ dr.issue.title|escapejs }}', '{{ dr.requested_by.get_full_name|escapejs }}', '{{ dr.reason|escapejs }}')">
+                                        <span class="deletion-request-icon">!</span>
+                                        <span class="deletion-request-content">
+                                            <span class="deletion-request-issue">#{{ dr.issue.issueID }} — {{ dr.issue.title|truncatechars:28 }}</span>
+                                            <span class="deletion-request-meta">Requested by {{ dr.requested_by.get_full_name }}</span>
                                         </span>
                                     </button>
                                     {% endfor %}
                                 {% else %}
-                                    <div style="font-size:12px; color:var(--text3,#4a5568);">No pending deletion requests.</div>
+                                    <div class="deletion-requests-empty">No pending deletion requests.</div>
                                 {% endif %}
                             </div><!-- /.deletion-requests-sidebar -->
 
@@ -280,26 +282,29 @@
                     <!-- Deletion Request Modal (Admin only) -->
                     {% if request.user.is_superuser %}
                     <div id="deletion-modal-backdrop"
-                         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; align-items:center; justify-content:center;"
+                         class="deletion-modal-backdrop"
                          onclick="if(event.target===this) closeDeletionModal()">
-                        <div style="background:var(--surface,#141720); border:1px solid var(--border,#252a3a); border-radius:8px; padding:24px; width:400px; max-width:90vw;">
-                            <div style="font-family:var(--mono,monospace); font-weight:700; font-size:15px; margin-bottom:6px;">
+                        <div class="deletion-modal">
+                            <div class="deletion-modal-title">
                                 Deletion Request — <span id="modal-issue-title"></span>
                             </div>
-                            <div style="font-size:12px; color:var(--text2,#8892a4); margin-bottom:14px;">
+                            <div class="deletion-modal-meta">
                                 Requested by <span id="modal-requester-name"></span>
                             </div>
-                            <div style="font-size:11px; font-family:var(--mono,monospace); color:var(--text2,#8892a4); letter-spacing:0.05em; margin-bottom:6px;">REASON</div>
-                            <div id="modal-reason-text" style="font-size:13px; background:var(--surface2,#1c2030); border:1px solid var(--border,#252a3a); border-radius:6px; padding:10px; margin-bottom:20px; max-height:160px; overflow-y:auto;"></div>
+                            <div class="deletion-modal-label">REASON</div>
+                            <div id="modal-reason-text" class="deletion-modal-reason"></div>
 
-                            <form id="deletion-accept-form" method="POST" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-sm" style="background:#ef4444; color:#fff; border:1px solid #ef4444;">Accept Deletion</button>
-                            </form>
-                            <form id="deletion-cancel-form" method="POST" style="display:inline; margin-left:8px;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-sm ghost">Cancel</button>
-                            </form>
+                            <div class="deletion-modal-actions">
+                                <form id="deletion-accept-form" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-sm danger">Accept</button>
+                                </form>
+                                <form id="deletion-cancel-form" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-sm ghost">Decline</button>
+                                </form>
+                                <button type="button" class="btn-sm ghost" onclick="closeDeletionModal()">Back</button>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -324,11 +329,11 @@
                                     onchange="filterMyIssues()"
                                     aria-label="Filter by status">
                                 <option value="ALL">All Status</option>
-                                <option value="open">Open</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
-                                <option value="pending_deletion">Pending Deletion</option>
+                                <option value="PENDING">Open</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="RESOLVED">Resolved</option>
+                                <option value="CLOSED">Closed</option>
+                                <option value="PENDING_DELETION">Pending Deletion</option>
                             </select>
                             <select id="my-filter-category"
                                     class="filter-select"
@@ -374,7 +379,7 @@
                                  onclick="window.location='{% url 'issue_detail' issue.issueID %}'"
                                  tabindex="0"
                                  onkeydown="if(event.key==='Enter')window.location='{% url 'issue_detail' issue.issueID %}'">
-                                <div class="issue-id" role="cell">#{{ issue.issueID }}</div>
+                                <div class="issue-id" role="cell">#{{ issue.user_issue_number }}</div>
                                 <div class="issue-title-cell" role="cell">
                                     <div class="issue-title-text">{{ issue.title }}</div>
                                     <div class="issue-desc">{{ issue.description|slice:':120' }}{% if issue.description|length > 120 %}…{% endif %}</div>
@@ -392,13 +397,13 @@
                                     {% endif %}
                                 </div>
                                 <div role="cell">
-                                    {% if issue.status == 'open' %}
+                                    {% if issue.status == 'PENDING' %}
                                         <span class="badge pending">{{ issue.get_status_display }}</span>
-                                    {% elif issue.status == 'in_progress' %}
+                                    {% elif issue.status == 'IN_PROGRESS' %}
                                         <span class="badge inprogress">{{ issue.get_status_display }}</span>
-                                    {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                    {% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}
                                         <span class="badge resolved">{{ issue.get_status_display }}</span>
-                                    {% elif issue.status == 'pending_deletion' %}
+                                    {% elif issue.status == 'PENDING_DELETION' %}
                                         <span class="badge deletion">{{ issue.get_status_display }}</span>
                                     {% endif %}
                                 </div>
@@ -424,8 +429,8 @@
                     {% if request.user.is_superuser %}
                     <div id="panel-users" style="display:none;" role="tabpanel" aria-labelledby="tab-btn-users">
 
-                        <!-- User Filter Bar -->
-                        <div class="filter-bar users-filter-bar" role="search" aria-label="Filter users">
+                        <!-- User Filter Bar - Now matches Issues and My Issues tabs -->
+                        <div class="filter-bar" role="search" aria-label="Filter users">
                             <input type="text"
                                    id="user-search"
                                    class="search-input"
@@ -437,11 +442,21 @@
                                     onchange="filterUsers()"
                                     aria-label="Filter user issues by status">
                                 <option value="ALL">All Status</option>
-                                <option value="open">Open</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
-                                <option value="pending_deletion">Pending Deletion</option>
+                                <option value="PENDING">Open</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="RESOLVED">Resolved</option>
+                                <option value="CLOSED">Closed</option>
+                                <option value="PENDING_DELETION">Pending Deletion</option>
+                            </select>
+                            <select id="user-filter-category"
+                                    class="filter-select"
+                                    onchange="filterUsers()"
+                                    aria-label="Filter user issues by category">
+                                <option value="ALL">All Categories</option>
+                                <option value="TECHNICAL">Technical</option>
+                                <option value="BILLING">Billing</option>
+                                <option value="GENERAL">General</option>
+                                <option value="OTHER">Other</option>
                             </select>
                             <select id="user-filter-priority"
                                     class="filter-select"
@@ -481,7 +496,7 @@
                                         <span class="badge low">User</span>
                                     {% endif %}
                                     <div class="user-issue-count">
-                                        {{ user_obj.issues.count }} issue{{ user_obj.issues.count|pluralize }}
+                                        {{ user_obj.dashboard_issues|length }} issue{{ user_obj.dashboard_issues|length|pluralize }}
                                     </div>
                                     <div class="user-chevron" id="chevron-{{ user_obj.pk }}" aria-hidden="true">+</div>
                                 </button>
@@ -490,14 +505,15 @@
                                 <div class="user-issues"
                                      id="user-issues-{{ user_obj.pk }}"
                                      style="display:none;">
-                                    {% for issue in user_obj.issues.all %}
+                                    {% for issue in user_obj.dashboard_issues %}
                                     <button class="user-issue-row"
                                             id="user-issue-row-{{ issue.issueID }}"
                                             data-title="{{ issue.title|lower }}"
+                                            data-category="{{ issue.category }}"
                                             data-priority="{{ issue.priority }}"
                                             data-status="{{ issue.status }}"
                                             onclick="window.location='{% url 'issue_detail' issue.issueID %}'">
-                                        <div class="issue-id">#{{ issue.issueID }}</div>
+                                        <div class="issue-id">#{{ issue.user_issue_number }}</div>
                                         <div class="issue-title-cell">
                                             <div class="issue-title-text">{{ issue.title }}</div>
                                             <div class="issue-desc">{{ issue.description|slice:':100' }}{% if issue.description|length > 100 %}…{% endif %}</div>
@@ -510,13 +526,13 @@
                                         {% else %}
                                             <span class="badge low">{{ issue.get_priority_display }}</span>
                                         {% endif %}
-                                        {% if issue.status == 'open' %}
+                                        {% if issue.status == 'PENDING' %}
                                             <span class="badge pending">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'in_progress' %}
+                                        {% elif issue.status == 'IN_PROGRESS' %}
                                             <span class="badge inprogress">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'resolved' or issue.status == 'closed' %}
+                                        {% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}
                                             <span class="badge resolved">{{ issue.get_status_display }}</span>
-                                        {% elif issue.status == 'pending_deletion' %}
+                                        {% elif issue.status == 'PENDING_DELETION' %}
                                             <span class="badge deletion">{{ issue.get_status_display }}</span>
                                         {% endif %}
                                     </button>
@@ -665,13 +681,15 @@ function toggleUser(userId) {
 function filterUsers() {
     var searchEl   = document.getElementById('user-search');
     var statusEl   = document.getElementById('user-filter-status');
+    var categoryEl = document.getElementById('user-filter-category');
     var priorityEl = document.getElementById('user-filter-priority');
 
     var search   = searchEl   ? searchEl.value.toLowerCase().trim() : '';
     var status   = statusEl   ? statusEl.value   : 'ALL';
+    var category = categoryEl ? categoryEl.value : 'ALL';
     var priority = priorityEl ? priorityEl.value : 'ALL';
 
-    var noFilters = (!search && status === 'ALL' && priority === 'ALL');
+    var noFilters = (!search && status === 'ALL' && category === 'ALL' && priority === 'ALL');
     var groups    = document.querySelectorAll('.user-group');
     var visibleGroups = 0;
 
@@ -695,18 +713,20 @@ function filterUsers() {
         issueRows.forEach(function(row) {
             var title   = (row.dataset.title    || '');
             var rStatus = (row.dataset.status   || '');
+            var rCat    = (row.dataset.category || '');
             var rPri    = (row.dataset.priority || '');
 
             var matchSearch   = !search || nameEmailMatch || title.includes(search);
             var matchStatus   = (status   === 'ALL') || (rStatus === status);
+            var matchCategory = (category === 'ALL') || (rCat === category);
             var matchPriority = (priority === 'ALL') || (rPri    === priority);
 
-            var show = matchSearch && matchStatus && matchPriority;
+            var show = matchSearch && matchStatus && matchCategory && matchPriority;
             row.style.display = show ? '' : 'none';
             if (show) visibleIssues++;
         });
 
-        var hasIssueFilters = (status !== 'ALL' || priority !== 'ALL');
+        var hasIssueFilters = (status !== 'ALL' || category !== 'ALL' || priority !== 'ALL');
         var showGroup;
         if (hasIssueFilters) {
             showGroup = (visibleIssues > 0);
