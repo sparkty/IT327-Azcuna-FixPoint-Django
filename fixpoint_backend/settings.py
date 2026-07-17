@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from decouple import config
 import dj_database_url
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -171,9 +173,12 @@ if _SUPABASE_STORAGE_KEY and _SUPABASE_STORAGE_SECRET and _SUPABASE_STORAGE_URL:
     STORAGES = {
         'default': {
             'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+            'BACKEND': "django.core.files.storage.FileSystemStorage",
         },
         'staticfiles': {
+            'BACKEND': 'whiteoise.storage.CompressedManifestStaticFilesStorage',
             'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+
         },
     }
     AWS_ACCESS_KEY_ID = _SUPABASE_STORAGE_KEY
