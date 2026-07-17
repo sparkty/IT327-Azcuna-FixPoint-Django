@@ -60,8 +60,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -146,6 +146,7 @@ LOGOUT_REDIRECT_URL = '/'  # Where to redirect after logout
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
@@ -173,11 +174,9 @@ if _SUPABASE_STORAGE_KEY and _SUPABASE_STORAGE_SECRET and _SUPABASE_STORAGE_URL:
     STORAGES = {
         'default': {
             'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
-            'BACKEND': "django.core.files.storage.FileSystemStorage",
         },
         'staticfiles': {
-            'BACKEND': 'whiteoise.storage.CompressedManifestStaticFilesStorage',
-            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
 
         },
     }
