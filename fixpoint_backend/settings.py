@@ -31,7 +31,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = csv_config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,.vercel.app',
+    default='localhost,127.0.0.1,.vercel.app,.onrender.com',
 )
 CSRF_TRUSTED_ORIGINS = csv_config('CSRF_TRUSTED_ORIGINS')
 

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: fixpoint-django
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: gunicorn fixpoint_backend.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.3
