@@ -1,0 +1,26 @@
+<div id="deletion-modal-backdrop"
+     class="deletion-modal-backdrop"
+     onclick="if(event.target===this) closeDeletionModal()">
+    <div class="deletion-modal">
+        <div class="deletion-modal-title">
+            Deletion Request - <span id="modal-issue-title"></span>
+        </div>
+        <div class="deletion-modal-meta">
+            Requested by <span id="modal-requester-name"></span>
+        </div>
+        <div class="deletion-modal-label">REASON</div>
+        <div id="modal-reason-text" class="deletion-modal-reason"></div>
+
+        <div class="deletion-modal-actions">
+            <form id="deletion-accept-form" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm danger">Accept</button>
+            </form>
+            <form id="deletion-cancel-form" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm ghost">Decline</button>
+            </form>
+            <button type="button" class="btn-sm ghost" onclick="closeDeletionModal()">Back</button>
+        </div>
+    </div>
+</div>

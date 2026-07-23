@@ -365,6 +365,14 @@
 }
 
 /* ── Issues Table ────────────────────────────────────────────────── */
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(700px, 1fr) minmax(260px, 320px);
+  gap: 16px;
+  align-items: start;
+  overflow-x: auto;
+}
+
 .issues-table {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -438,6 +446,38 @@
   color: var(--text3);
   font-family: var(--mono);
   white-space: nowrap;
+}
+
+.issue-deletion-cell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.deletion-action-btn {
+  width: 78px;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: rgba(100, 116, 139, 0.08);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.deletion-action-btn.active {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  cursor: pointer;
+}
+
+.deletion-action-btn.active:hover,
+.deletion-action-btn.active:focus-visible {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.65);
+  outline: none;
 }
 
 /* ── Badges ──────────────────────────────────────────────────────── */
@@ -629,8 +669,7 @@
 
 /* Deletion Requests */
 .deletion-requests-panel {
-  width: 260px;
-  flex-shrink: 0;
+  width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -766,6 +805,10 @@
   .stats-row { gap: 12px; }
   .stat-card { padding: 14px 16px; }
   .table-header, .issue-row { padding: 12px 16px; gap: 8px; }
+  .table-header--with-deletion,
+  .issue-row--with-deletion {
+    grid-template-columns: 44px minmax(220px, 1fr) 100px 82px 120px 96px 96px;
+  }
   .badge { min-width: 60px; padding: 3px 8px; }
   .user-row { grid-template-columns: 36px minmax(180px, 1fr) 80px 90px 24px; gap: 10px; padding: 14px 16px; }
   .user-issue-row { grid-template-columns: 44px minmax(180px, 1fr) 90px 80px 90px; padding-left: 52px; }
@@ -777,6 +820,10 @@
   .filter-bar { flex-wrap: wrap; }
   .filter-select { flex: 1; }
   .table-header, .issue-row { min-width: 700px; }
+  .table-header--with-deletion,
+  .issue-row--with-deletion {
+    min-width: 860px;
+  }
   .issues-table { overflow-x: auto; }
   .dashboard-tabs { display: flex; width: 100%; }
   .dashboard-tab { flex: 1; }

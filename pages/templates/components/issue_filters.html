@@ -1,0 +1,41 @@
+<div class="filter-bar" role="search" aria-label="Filter issues">
+    <input type="text"
+           id="{{ search_id }}"
+           class="search-input"
+           placeholder="Search issues by title, description..."
+           oninput="{{ oninput }}"
+           aria-label="Search issues">
+
+    <select id="{{ status_id }}"
+            class="filter-select"
+            onchange="{{ onchange }}"
+            aria-label="Filter by status">
+        <option value="ALL">All Status</option>
+        <option value="PENDING">Open</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="RESOLVED">Resolved</option>
+        <option value="CLOSED">Closed</option>
+        <option value="PENDING_DELETION">Pending Deletion</option>
+    </select>
+
+    <select id="{{ category_id }}"
+            class="filter-select"
+            onchange="{{ onchange }}"
+            aria-label="Filter by category">
+        <option value="ALL">All Categories</option>
+        <option value="TECHNICAL">Technical</option>
+        <option value="BILLING">Billing</option>
+        <option value="GENERAL">General</option>
+        <option value="OTHER">Other</option>
+    </select>
+
+    <select id="{{ priority_id }}"
+            class="filter-select"
+            onchange="{{ onchange }}"
+            aria-label="Filter by priority">
+        <option value="ALL">All Priority</option>
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+    </select>
+</div>

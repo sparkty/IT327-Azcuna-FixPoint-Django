@@ -1,0 +1,22 @@
+<div class="stats-row" role="region" aria-label="Issue statistics">
+    <div class="stat-card">
+        <div class="stat-label">TOTAL ISSUES</div>
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-trend">All time</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">OPEN</div>
+        <div class="stat-value yellow">{{ stats.open }}</div>
+        <div class="stat-trend">Awaiting review</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">IN PROGRESS</div>
+        <div class="stat-value blue">{{ stats.in_progress }}</div>
+        <div class="stat-trend">Being worked on</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">RESOLVED</div>
+        <div class="stat-value green">{{ stats.resolved }}</div>
+        <div class="stat-trend">Closed</div>
+    </div>
+</div>

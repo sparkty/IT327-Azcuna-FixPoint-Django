@@ -1,0 +1,21 @@
+<div class="deletion-requests-panel">
+    <div class="deletion-requests-title">
+        DELETION REQUESTS
+    </div>
+
+    {% if pending_deletion_requests %}
+        {% for dr in pending_deletion_requests %}
+            <button type="button"
+                    class="deletion-request-card"
+                    onclick="openDeletionModal({{ dr.deleteRequestID }}, '{{ dr.issue.title|escapejs }}', '{{ dr.requested_by.get_full_name|escapejs }}', '{{ dr.reason|escapejs }}')">
+                <span class="deletion-request-icon">!</span>
+                <span class="deletion-request-content">
+                    <span class="deletion-request-issue">#{{ dr.issue.issueID }} - {{ dr.issue.title|truncatechars:28 }}</span>
+                    <span class="deletion-request-meta">Requested by {{ dr.requested_by.get_full_name }}</span>
+                </span>
+            </button>
+        {% endfor %}
+    {% else %}
+        <div class="deletion-requests-empty">No pending deletion requests.</div>
+    {% endif %}
+</div>

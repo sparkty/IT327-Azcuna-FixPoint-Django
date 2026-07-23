@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FixPoint - track and manage your reported issues">
+    <title>{% block title %}FixPoint{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'pages/css/dashboard.css' %}">
+    {% block page_css %}{% endblock %}
+</head>
+<body>
+<div class="dashboard-container">
+    <nav class="top-nav" role="navigation" aria-label="Top navigation">
+        <div class="top-nav-inner">
+            <div class="nav-logo">FixPoint</div>
+            <div class="nav-right">
+                <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                {% if request.user.is_superuser %}
+                    <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="app-shell">
+            <aside class="sidebar" role="complementary" aria-label="Sidebar navigation">
+                <div class="sidebar-section">
+                    <div class="sidebar-label">Navigation</div>
+                    <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                        <span class="sidebar-icon">#</span> Dashboard
+                    </a>
+                    <a href="{% url 'create_issue' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_issue' %}active{% endif %}" id="nav-create-issue">
+                        <span class="sidebar-icon">+</span> New Issue
+                    </a>
+                    <a href="{% url 'notifications' %}" class="sidebar-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}" id="nav-notifications">
+                        <span class="sidebar-icon">!</span> Notifications
+                        {% if unread_notifications_count %}
+                            <span class="sidebar-count">{{ unread_notifications_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="#" class="sidebar-link" id="nav-profile">
+                        <span class="sidebar-icon">@</span> Profile
+                    </a>
+                </div>
+            </aside>
+
+            <div class="main-area" role="main">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block page_js %}{% endblock %}
+</body>
+</html>

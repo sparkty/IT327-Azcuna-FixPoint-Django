@@ -1,0 +1,52 @@
+<div class="user-group"
+     id="user-group-{{ user_obj.pk }}"
+     data-name="{{ user_obj.get_full_name|lower }}"
+     data-email="{{ user_obj.email|lower }}">
+    <button class="user-row"
+            id="user-btn-{{ user_obj.pk }}"
+            onclick="toggleUser({{ user_obj.pk }})"
+            aria-expanded="false"
+            aria-controls="user-issues-{{ user_obj.pk }}">
+        <div class="user-avatar" aria-hidden="true">
+            {{ user_obj.first_name|slice:":1" }}{{ user_obj.last_name|slice:":1" }}
+        </div>
+        <div class="user-info">
+            <div class="user-name">{{ user_obj.get_full_name }}</div>
+            <div class="user-email">{{ user_obj.email }}</div>
+        </div>
+        {% if user_obj.is_superuser %}
+            <span class="badge high">Admin</span>
+        {% else %}
+            <span class="badge low">User</span>
+        {% endif %}
+        <div class="user-issue-count">
+            {{ user_obj.dashboard_issues|length }} issue{{ user_obj.dashboard_issues|length|pluralize }}
+        </div>
+        <div class="user-chevron" id="chevron-{{ user_obj.pk }}" aria-hidden="true">+</div>
+    </button>
+
+    <div class="user-issues"
+         id="user-issues-{{ user_obj.pk }}"
+         style="display:none;">
+        {% for issue in user_obj.dashboard_issues %}
+            <button class="user-issue-row"
+                    id="user-issue-row-{{ issue.issueID }}"
+                    data-title="{{ issue.title|lower }}"
+                    data-category="{{ issue.category }}"
+                    data-priority="{{ issue.priority }}"
+                    data-status="{{ issue.status }}"
+                    onclick="window.location='{% url 'issue_detail' issue.issueID %}'">
+                <div class="issue-id">#{{ issue.user_issue_number }}</div>
+                <div class="issue-title-cell">
+                    <div class="issue-title-text">{{ issue.title }}</div>
+                    <div class="issue-desc">{{ issue.description|slice:':100' }}{% if issue.description|length > 100 %}&hellip;{% endif %}</div>
+                </div>
+                <span class="badge low">{{ issue.get_category_display }}</span>
+                {% include "components/priority_badge.html" with priority=issue.priority %}
+                {% include "components/status_badge.html" with status=issue.status %}
+            </button>
+        {% empty %}
+            <div class="user-issue-empty">This user has no issues yet.</div>
+        {% endfor %}
+    </div>
+</div>

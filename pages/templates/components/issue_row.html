@@ -1,0 +1,34 @@
+<div class="issue-row"
+     role="row"
+     id="{{ row_prefix }}{{ issue.issueID }}"
+     data-title="{{ issue.title|lower }}"
+     data-desc="{{ issue.description|lower|slice:':200' }}"
+     data-status="{{ issue.status }}"
+     data-category="{{ issue.category }}"
+     data-priority="{{ issue.priority }}"
+     onclick="window.location='{% url 'issue_detail' issue.issueID %}'"
+     tabindex="0"
+     onkeydown="if(event.key==='Enter')window.location='{% url 'issue_detail' issue.issueID %}'">
+    <div class="issue-id" role="cell">
+        #{% if use_user_issue_number %}{{ issue.user_issue_number }}{% else %}{{ issue.issueID }}{% endif %}
+    </div>
+
+    <div class="issue-title-cell" role="cell">
+        <div class="issue-title-text">{{ issue.title }}</div>
+        <div class="issue-desc">{{ issue.description|slice:':120' }}{% if issue.description|length > 120 %}&hellip;{% endif %}</div>
+    </div>
+
+    <div role="cell">
+        <span class="badge low">{{ issue.get_category_display }}</span>
+    </div>
+
+    <div role="cell">
+        {% include "components/priority_badge.html" with priority=issue.priority %}
+    </div>
+
+    <div role="cell">
+        {% include "components/status_badge.html" with status=issue.status %}
+    </div>
+
+    <div class="issue-date" role="cell">{{ issue.createdAt|date:"M d, Y" }}</div>
+</div>

@@ -1,0 +1,16 @@
+<div class="app-topbar">
+    <div>
+        <h1 class="page-title">
+            {% if request.user.is_superuser %}All Issues{% else %}My Issues{% endif %}
+        </h1>
+        <div class="page-sub">{{ subtitle }}</div>
+    </div>
+    <div class="topbar-actions">
+        {% if show_export %}
+            <button class="btn-sm ghost" id="export-btn" onclick="exportIssues()">Export</button>
+        {% endif %}
+        {% if show_new_issue %}
+            <a href="{% url 'create_issue' %}" class="btn-sm primary" id="new-issue-btn">+ New Issue</a>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,41 @@
+<div class="filter-bar" role="search" aria-label="Filter users">
+    <input type="text"
+           id="user-search"
+           class="search-input"
+           placeholder="Search users by name, email, or issue..."
+           oninput="filterUsers()"
+           aria-label="Search users">
+
+    <select id="user-filter-status"
+            class="filter-select"
+            onchange="filterUsers()"
+            aria-label="Filter user issues by status">
+        <option value="ALL">All Status</option>
+        <option value="PENDING">Open</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="RESOLVED">Resolved</option>
+        <option value="CLOSED">Closed</option>
+        <option value="PENDING_DELETION">Pending Deletion</option>
+    </select>
+
+    <select id="user-filter-category"
+            class="filter-select"
+            onchange="filterUsers()"
+            aria-label="Filter user issues by category">
+        <option value="ALL">All Categories</option>
+        <option value="TECHNICAL">Technical</option>
+        <option value="BILLING">Billing</option>
+        <option value="GENERAL">General</option>
+        <option value="OTHER">Other</option>
+    </select>
+
+    <select id="user-filter-priority"
+            class="filter-select"
+            onchange="filterUsers()"
+            aria-label="Filter user issues by priority">
+        <option value="ALL">All Priority</option>
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+    </select>
+</div>

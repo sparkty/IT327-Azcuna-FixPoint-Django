@@ -1,0 +1,11 @@
+{% if status == 'PENDING' %}
+    <span class="badge pending">Open</span>
+{% elif status == 'IN_PROGRESS' %}
+    <span class="badge inprogress">In Progress</span>
+{% elif status == 'RESOLVED' %}
+    <span class="badge resolved">Resolved</span>
+{% elif status == 'CLOSED' %}
+    <span class="badge resolved">Closed</span>
+{% elif status == 'PENDING_DELETION' %}
+    <span class="badge deletion">Pending Deletion</span>
+{% endif %}
