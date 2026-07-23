@@ -1,10 +1,13 @@
 from django.contrib import messages
-from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth import get_user_model, authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.decorators.http import require_POST
 from django.db.models import Prefetch, Q
 from fixpoint_backend.delete_requests.models import DeleteRequest
@@ -471,3 +474,91 @@ def cancel_deletion_request(request, delete_request_id):
 def logout_view(request):
     logout(request)
     return redirect('/')
+
+
+@login_required(login_url='/')
+def profile(request):
+    context = {}
+    context.update(notification_context(request))
+    return render(request, 'pages/profile.html', context)
+
+
+@login_required(login_url='/')
+@require_POST
+def profile_change_password(request):
+    current_password = request.POST.get('current_password', '').strip()
+    new_password = request.POST.get('new_password', '').strip()
+    confirm_password = request.POST.get('confirm_password', '').strip()
+
+    if not current_password or not new_password or not confirm_password:
+        messages.error(request, 'All password fields are required.')
+        return redirect('profile')
+
+    if not request.user.check_password(current_password):
+        messages.error(request, 'Current password is incorrect.')
+        return redirect('profile')
+
+    if len(new_password) < 8:
+        messages.error(request, 'New password must be at least 8 characters.')
+        return redirect('profile')
+
+    if new_password != confirm_password:
+        messages.error(request, 'New passwords do not match.')
+        return redirect('profile')
+
+    request.user.set_password(new_password)
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    messages.success(request, 'Password updated successfully.')
+    return redirect('profile')
+
+
+@require_POST
+def forgot_password(request):
+    email = request.POST.get('email', '').strip().lower()
+    if not email:
+        messages.error(request, 'Email is required.')
+        return redirect('/?tab=login')
+
+    user = User.objects.filter(email=email, is_active=True).first()
+    if not user:
+        messages.error(request, 'No account found with that email address.')
+        return redirect('/?tab=login')
+
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    reset_token = f"{uid}.{token}"
+
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"[FixPoint] Password reset token for {email}: {reset_token}")
+    print(f"\n[FixPoint] Password reset token for {email}:\n  {reset_token}\n")
+
+    return redirect(f'/?resetToken={reset_token}')
+
+
+@require_POST
+def reset_password(request):
+    raw_token = request.POST.get('token', '').strip()
+    new_password = request.POST.get('password', '').strip()
+
+    if not raw_token or not new_password:
+        messages.error(request, 'Invalid request. Please try again.')
+        return redirect('/?tab=login')
+
+    try:
+        uid_b64, token = raw_token.rsplit('.', 1)
+        uid = force_str(urlsafe_base64_decode(uid_b64))
+        user = User.objects.get(pk=uid)
+    except (ValueError, User.DoesNotExist, Exception):
+        messages.error(request, 'Reset link is invalid or expired. Please request a new one.')
+        return redirect('/?tab=login')
+
+    if not default_token_generator.check_token(user, token):
+        messages.error(request, 'Reset link is invalid or expired. Please request a new one.')
+        return redirect('/?tab=login')
+
+    user.set_password(new_password)
+    user.save()
+    messages.success(request, 'Password reset successfully. You can now sign in.')
+    return redirect('/?tab=login')

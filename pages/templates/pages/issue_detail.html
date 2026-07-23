@@ -1,291 +1,33 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Issue #{{ display_issue_number }} — FixPoint">
-    <title>Issue #{{ display_issue_number }} — FixPoint</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+{% block title %}Issue #{{ display_issue_number }} — FixPoint{% endblock %}
+
+{% block page_css %}
     <link rel="stylesheet" href="{% static 'pages/css/issue_detail.css' %}">
-</head>
-<body>
-<div class="issue-detail-container">
+{% endblock %}
 
-    <nav class="top-nav" role="navigation" aria-label="Top navigation">
-        <div class="top-nav-inner">
-            <div class="nav-logo">⬡ FixPoint</div>
-            <div class="nav-right">
-                <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                {% if request.user.is_superuser %}
-                    <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
-                {% endif %}
-                <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
+{% block content %}
+    {% include "components/issue_detail_topbar.html" %}
+
+    <div class="page-body">
+        {% include "components/issue_detail_messages.html" %}
+
+        <div class="issue-detail-layout">
+            <!-- Left Column - Main Content -->
+            <div>
+                {% include "components/issue_detail_header.html" %}
+                {% include "components/issue_detail_description.html" %}
+                {% include "components/issue_detail_attachments.html" %}
+                {% include "components/issue_detail_timeline.html" %}
             </div>
-        </div>
-    </nav>
 
-    <div class="content">
-        <div class="app-shell">
-
-            <!-- Sidebar -->
-            <aside class="sidebar" role="complementary" aria-label="Sidebar navigation">
-                <div class="sidebar-section">
-                    <div class="sidebar-label">Navigation</div>
-                    <a href="{% url 'dashboard' %}" class="sidebar-link" id="nav-dashboard">
-                        <span class="sidebar-icon">◈</span> Dashboard
-                    </a>
-                    <a href="{% url 'create_issue' %}" class="sidebar-link" id="nav-create-issue">
-                        <span class="sidebar-icon">✚</span> New Issue
-                    </a>
-                    <a href="{% url 'notifications' %}" class="sidebar-link" id="nav-notifications">
-                        <span class="sidebar-icon">&#9678;</span> Notifications
-                        {% if unread_notifications_count %}
-                            <span class="sidebar-count">{{ unread_notifications_count }}</span>
-                        {% endif %}
-                    </a>
-                    <a href="#" class="sidebar-link" id="nav-profile">
-                        <span class="sidebar-icon">◌</span> Profile
-                    </a>
-                </div>
-
-            </aside>
-
-            <!-- Main Area -->
-            <div class="main-area" role="main">
-                <div class="app-topbar">
-                    <div>
-                        <h1 class="page-title">Issue Details</h1>
-                        <div class="page-sub">{{ issue.title }}</div>
-                    </div>
-                    <div class="topbar-actions">
-                        <a href="{% url 'dashboard' %}" class="btn-sm ghost">← Back</a>
-                        {% if request.user.is_superuser %}
-                            <a href="#" class="btn-sm ghost" id="edit-btn">Edit</a>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="page-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
-                                {% if message.tags == 'error' %}⚠{% else %}✓{% endif %} {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <div class="issue-detail-layout">
-                        <!-- Left Column - Main Content -->
-                        <div>
-                            <!-- Issue Header -->
-                            <div class="issue-detail-header">
-                                <div class="issue-detail-id">
-                                    ISSUE-{{ display_issue_number }} · Created {{ issue.createdAt|date:"M d, Y · H:i" }}
-                                </div>
-                                <div class="issue-detail-title">{{ issue.title }}</div>
-                                <div class="issue-meta-row">
-                                    <div class="issue-meta-item">◫ {{ issue.get_category_display }}</div>
-                                    <div class="issue-meta-item">
-                                        ▲ <span style="color: {% if issue.priority == 'HIGH' %}var(--accent){% else %}inherit{% endif %};">
-                                            {{ issue.get_priority_display }} Priority
-                                        </span>
-                                    </div>
-                                    <div class="issue-meta-item">◐ {{ issue.user.get_full_name }}</div>
-                                    <div class="issue-meta-item">◷ Updated {{ issue.updatedAt|timesince }} ago</div>
-                                </div>
-                            </div>
-
-                            <!-- Description Card -->
-                            <div class="form-card">
-                                <div class="form-card-title">Description</div>
-                                <div class="issue-description">
-                                    {{ issue.description|linebreaks }}
-                                </div>
-                            </div>
-
-                            <!-- Attachments Card -->
-                            {% if issue.attachments.all %}
-                            <div class="form-card">
-                                <div class="form-card-title">Attachments</div>
-                                <div class="attachments-list">
-                                    {% for attachment in issue.attachments.all %}
-                                    {% with file_url=attachment.file.url %}
-                                    <div class="{% if attachment.is_image %}attachment-preview{% else %}attachment-chip{% endif %}">
-                                        {% if attachment.is_image %}
-                                            <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-image-link">
-                                                <img src="{{ file_url }}" alt="{{ attachment.fileName }}" class="attachment-image">
-                                            </a>
-                                            <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-file-link">
-                                                {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
-                                            </a>
-                                        {% else %}
-                                        <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer">
-                                            ▤ {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                    {% endwith %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <!-- Activity Timeline Card -->
-                            <div class="form-card">
-                                <div class="form-card-title">Activity Timeline</div>
-                                <div class="timeline">
-                                    <!-- Issue Created Event -->
-                                    <div class="timeline-item">
-                                        <div class="timeline-dot red">◈</div>
-                                        <div class="timeline-content">
-                                            <div class="timeline-event">
-                                                Issue submitted by {{ issue.user.get_full_name }}
-                                            </div>
-                                            <div class="timeline-time">{{ issue.createdAt|date:"M d, Y · H:i" }}</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Comments -->
-                                    {% for comment in issue.comments.all %}
-                                    <div class="timeline-item">
-                                        <div class="timeline-dot">◎</div>
-                                        <div class="timeline-content">
-                                            <div class="timeline-event">
-                                                <strong>{{ comment.user.get_full_name }}</strong> commented
-                                            </div>
-                                            <div class="timeline-comment">{{ comment.content }}</div>
-                                            <div class="timeline-time">{{ comment.createdAt|date:"M d, Y · H:i" }}</div>
-                                        </div>
-                                    </div>
-                                    {% empty %}
-                                    <div class="timeline-item">
-                                        <div class="timeline-dot"></div>
-                                        <div class="timeline-content">
-                                            <div class="timeline-event" style="color: var(--text3);">
-                                                No additional activity yet.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Add Comment Section -->
-                                <div style="margin-top: 16px;">
-                                    <div class="form-label">ADD COMMENT</div>
-                                    <form method="POST" action="{% url 'add_comment' issue.issueID %}">
-                                        {% csrf_token %}
-                                        <textarea class="comment-input-area" name="content" placeholder="Write a comment or additional info…" rows="3"></textarea>
-                                        <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-                                            <button type="submit" class="btn-sm primary">Post Comment</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Column - Sidebar Info -->
-                        <div class="detail-sidebar">
-                            <div class="form-card sticky-preview">
-                                <div class="form-card-title">Issue Status</div>
-                                <div class="preview-content">
-                                    <div>
-                                        <div class="form-label">CURRENT STATUS</div>
-                                        <div class="preview-status" style="margin-top: 6px;">
-                                            <span class="badge {% if issue.status == 'PENDING' %}pending{% elif issue.status == 'IN_PROGRESS' %}inprogress{% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}resolved{% else %}deletion{% endif %}">
-                                                {{ issue.get_status_display }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Status Update Dropdown (Admin only — UI hiding only; view.py must also enforce this) -->
-                                    {% if request.user.is_superuser %}
-                                    <div class="preview-section">
-                                        <div class="form-label">UPDATE STATUS</div>
-                                        <form method="POST" action="{% url 'update_status' issue.issueID %}">
-                                            {% csrf_token %}
-                                            <select class="status-select" name="status" onchange="this.form.submit()">
-                                                <option value="PENDING" {% if issue.status == 'PENDING' %}selected{% endif %}>Open</option>
-                                                <option value="IN_PROGRESS" {% if issue.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
-                                                <option value="RESOLVED" {% if issue.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
-                                                <option value="CLOSED" {% if issue.status == 'CLOSED' %}selected{% endif %}>Closed</option>
-                                            </select>
-                                        </form>
-                                    </div>
-                                    {% endif %}
-
-                                    <div class="preview-section">
-                                        <div class="form-label">PRIORITY</div>
-                                        <div class="preview-status" style="margin-top: 6px;">
-                                            <span class="badge {% if issue.priority == 'HIGH' %}high{% elif issue.priority == 'MEDIUM' %}medium{% else %}low{% endif %}">
-                                                {{ issue.get_priority_display }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="preview-section">
-                                        <div class="form-label">CATEGORY</div>
-                                        <div style="font-size: 13px; margin-top: 6px; color: var(--text2);">
-                                            {{ issue.get_category_display }}
-                                        </div>
-                                    </div>
-
-                                    <div class="preview-section">
-                                        <div class="form-label">REPORTER</div>
-                                        <div class="submitted-by" style="margin-top: 6px;">
-                                            <div class="preview-avatar">{{ issue.user.first_name|slice:":1" }}{{ issue.user.last_name|slice:":1" }}</div>
-                                            <span>{{ issue.user.get_full_name }}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="preview-section">
-                                        <div class="form-label">CREATED</div>
-                                        <div class="preview-date">{{ issue.createdAt|date:"M d, Y · H:i" }}</div>
-                                        <div class="form-label" style="margin-top: 10px;">LAST UPDATED</div>
-                                        <div class="preview-date">{{ issue.updatedAt|date:"M d, Y · H:i" }}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Delete Request Section -->
-                            {% if not request.user.is_superuser and issue.user == request.user %}
-                            <div class="form-card" style="border-color: rgba(239,68,68,0.2); margin-top: 16px;">
-                                <div class="form-card-title">Danger Zone</div>
-                                <button class="btn-sm danger" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); width: 100%;" onclick="document.getElementById('delete-form').style.display='block'; this.style.display='none';">
-                                    Request Deletion
-                                </button>
-                                <form id="delete-form" method="POST" action="{% url 'request_deletion' issue.issueID %}" style="display: none; margin-top: 12px;">
-                                    {% csrf_token %}
-                                    <div class="form-label" style="margin-bottom: 8px;">REASON FOR DELETION *</div>
-                                    <textarea class="comment-input-area" name="reason" placeholder="Explain why you want this issue deleted…" rows="3" required></textarea>
-                                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                                        <button type="submit" class="btn-sm primary">Submit Request</button>
-                                        <button type="button" class="btn-sm ghost" onclick="document.getElementById('delete-form').style.display='none'; document.querySelector('.btn-sm.danger').style.display='block';">Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Right Column - Sidebar Info -->
+            {% include "components/issue_detail_sidebar.html" %}
         </div>
     </div>
-</div>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const deleteBtn = document.querySelector('.btn-sm.danger');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', function() {
-                document.getElementById('delete-form').style.display = 'block';
-                this.style.display = 'none';
-            });
-        }
-    });
-</script>
-
-</body>
-</html>
+{% block page_js %}
+    <script src="{% static 'pages/js/issue_detail.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,20 @@
+<!-- Profile Card -->
+<div class="profile-card">
+    <div class="profile-card-inner">
+        <div class="profile-avatar">
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+        </div>
+        <div class="profile-identity">
+            <div class="profile-fullname">{{ request.user.first_name }} {{ request.user.last_name }}</div>
+            <div class="profile-email-row">
+                <span class="profile-email">{{ request.user.email }}</span>
+                {% if request.user.is_superuser %}
+                    <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
+                {% endif %}
+            </div>
+            {% if request.user.department %}
+                <div class="profile-dept-tag">{{ request.user.get_department_display }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>

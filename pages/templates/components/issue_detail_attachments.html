@@ -1,0 +1,25 @@
+{% if issue.attachments.all %}
+<div class="form-card">
+    <div class="form-card-title">Attachments</div>
+    <div class="attachments-list">
+        {% for attachment in issue.attachments.all %}
+        {% with file_url=attachment.file.url %}
+        <div class="{% if attachment.is_image %}attachment-preview{% else %}attachment-chip{% endif %}">
+            {% if attachment.is_image %}
+                <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-image-link">
+                    <img src="{{ file_url }}" alt="{{ attachment.fileName }}" class="attachment-image">
+                </a>
+                <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer" class="attachment-file-link">
+                    {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
+                </a>
+            {% else %}
+            <a href="{{ file_url }}" target="_blank" rel="noopener noreferrer">
+                ▤ {{ attachment.fileName }} ({{ attachment.fileSize|filesizeformat }})
+            </a>
+            {% endif %}
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

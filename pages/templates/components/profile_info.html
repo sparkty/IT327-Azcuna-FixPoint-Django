@@ -1,0 +1,47 @@
+<!-- Profile Info Grid -->
+<div class="profile-section">
+    <div class="profile-section-header">
+        <span class="profile-section-icon">◈</span>
+        <span class="profile-section-title">Account Information</span>
+    </div>
+    <div class="profile-info-grid">
+        <div class="profile-info-item">
+            <div class="profile-info-label">FIRST NAME</div>
+            <div class="profile-info-value">{{ request.user.first_name }}</div>
+        </div>
+        <div class="profile-info-item">
+            <div class="profile-info-label">LAST NAME</div>
+            <div class="profile-info-value">{{ request.user.last_name }}</div>
+        </div>
+        <div class="profile-info-item profile-info-item--wide">
+            <div class="profile-info-label">EMAIL ADDRESS</div>
+            <div class="profile-info-value">{{ request.user.email }}</div>
+        </div>
+        <div class="profile-info-item">
+            <div class="profile-info-label">DEPARTMENT</div>
+            <div class="profile-info-value">
+                {% if request.user.department %}
+                    {{ request.user.get_department_display }}
+                {% else %}
+                    <span class="profile-info-empty">Not set</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="profile-info-item">
+            <div class="profile-info-label">ACCOUNT TYPE</div>
+            <div class="profile-info-value">
+                {% if request.user.is_superuser %}Administrator{% else %}Standard User{% endif %}
+            </div>
+        </div>
+        <div class="profile-info-item">
+            <div class="profile-info-label">MEMBER SINCE</div>
+            <div class="profile-info-value profile-info-mono">{{ request.user.date_joined|date:"N j, Y" }}</div>
+        </div>
+        <div class="profile-info-item">
+            <div class="profile-info-label">LAST LOGIN</div>
+            <div class="profile-info-value profile-info-mono">
+                {% if request.user.last_login %}{{ request.user.last_login|date:"N j, Y" }}{% else %}<span class="profile-info-empty">Never</span>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>

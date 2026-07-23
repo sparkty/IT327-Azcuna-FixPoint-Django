@@ -1,0 +1,16 @@
+<div class="app-topbar">
+    <div>
+        <h1 class="page-title">Notifications</h1>
+        <div class="page-sub">Issue updates, comments, and review requests</div>
+    </div>
+    <div class="topbar-actions">
+        <form method="POST" action="{% url 'mark_all_notifications_read' %}">
+            {% csrf_token %}
+            <button class="btn-sm ghost" type="submit" {% if not unread_notifications_count %}disabled{% endif %}>Mark all read</button>
+        </form>
+        <form method="POST" action="{% url 'delete_read_notifications' %}">
+            {% csrf_token %}
+            <button class="btn-sm ghost" type="submit" {% if not read_notifications_count %}disabled{% endif %}>Delete read</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+<div class="form-card">
+    <div class="form-card-title">Issue Details</div>
+    <div class="form-grid">
+        <div class="form-group form-group-full">
+            <label class="form-label">ISSUE TITLE *</label>
+            <input type="text" class="form-input" id="issueTitle" name="title"
+                   placeholder="Brief, descriptive title for the issue…" required />
+        </div>
+        <div class="form-group">
+            <label class="form-label">CATEGORY *</label>
+            <select class="form-input" id="issueCategory" name="category" required>
+                <option value="">Select category…</option>
+                <option value="TECHNICAL">Technical</option>
+                <option value="BILLING">Billing</option>
+                <option value="GENERAL">General</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">PRIORITY</label>
+            <select class="form-input" id="issuePriority" name="priority">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>
+            </select>
+        </div>
+        <div class="form-group form-group-full">
+            <label class="form-label">DESCRIPTION *</label>
+            <textarea class="form-textarea" id="issueDescription" name="description"
+                      placeholder="Describe the issue in detail. Include steps to reproduce, expected behavior, and actual behavior…"
+                      required></textarea>
+        </div>
+    </div>
+</div>

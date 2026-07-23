@@ -16,4 +16,8 @@ urlpatterns = [
     path('issue/<int:issue_id>/request-deletion/', views.request_deletion, name='request_deletion'),
     path('deletion-request/<int:delete_request_id>/accept/', views.accept_deletion_request, name='accept_deletion_request'),
     path('deletion-request/<int:delete_request_id>/cancel/', views.cancel_deletion_request, name='cancel_deletion_request'),
+    path('profile/', views.profile, name='profile'),
+    path('profile/change-password/', views.profile_change_password, name='profile_change_password'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('reset-password/', views.reset_password, name='reset_password'),
 ]

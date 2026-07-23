@@ -6,6 +6,21 @@ document.addEventListener('DOMContentLoaded', function () {
   const alertSuccess = document.getElementById('alert-success');
   const alertSuccessText = document.getElementById('alert-success-text');
 
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
   function clearFieldErrors() {
     document.querySelectorAll('.field-error').forEach(function (el) {
       el.textContent = '';
@@ -83,8 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const loginForm = document.getElementById('form-login');
   if (loginForm) {
     loginForm.addEventListener('submit', function (e) {
-      // Let the form submit naturally - no need to prevent default
-      // The form will POST to the server and handle the redirect
       console.log('Login form submitting...');
     });
   }
@@ -93,106 +106,36 @@ document.addEventListener('DOMContentLoaded', function () {
   const registerForm = document.getElementById('form-register');
   if (registerForm) {
     registerForm.addEventListener('submit', function (e) {
-      // Let the form submit naturally
       console.log('Register form submitting...');
     });
   }
 
   // ── FORGOT PASSWORD HANDLER ──────────────────────────────────────
-  const forgotForm = document.getElementById('form-forgot');
-  if (forgotForm) {
-    forgotForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      clearFieldErrors();
-      hideAlerts();
-
-      const email = document.getElementById('forgot-email').value.trim();
-
-      if (!email) {
-        showError('Email is required.');
-        return;
-      }
-
-      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
-      fetch('/forgot-password/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': csrftoken,
-        },
-        body: new URLSearchParams({
-          'email': email,
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showSuccess('If that email exists, a reset link has been sent.');
-        } else {
-          showError(data.message || 'Failed to send reset link.');
-        }
-      })
-      .catch(() => {
-        showError('Failed to send reset link. Please try again.');
-      });
-    });
-  }
 
   // ── RESET PASSWORD HANDLER ───────────────────────────────────────
   const resetForm = document.getElementById('form-reset');
   if (resetForm) {
     resetForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      clearFieldErrors();
-      hideAlerts();
-
       const password = document.getElementById('reset-password').value;
       const confirmPassword = document.getElementById('reset-confirm-password').value;
-      const token = document.getElementById('reset-token').value;
 
       if (!password || password.length < 8) {
+        e.preventDefault();
         showError('Password must be at least 8 characters.');
         return;
       }
       if (password !== confirmPassword) {
+        e.preventDefault();
         showError('Passwords do not match.');
         return;
       }
-
-      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
-      fetch('/reset-password/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': csrftoken,
-        },
-        body: new URLSearchParams({
-          'token': token,
-          'password': password,
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showSuccess('Password reset successfully. Please sign in.');
-          setTimeout(() => showPanel('login'), 1500);
-        } else {
-          showError(data.message || 'Reset link is invalid or expired.');
-        }
-      })
-      .catch(() => {
-        showError('Failed to reset password. Please try again.');
-      });
+      // Passes — let the form POST to /reset-password/ naturally.
     });
   }
 
   // ── Display Django messages from the server ──────────────────────
-  // If there are Django messages, they'll be shown as alerts
   const djangoMessages = document.querySelectorAll('.alert-success, .alert-error');
   djangoMessages.forEach(function(msg) {
-    // They're already displayed by Django, but we want to ensure they show
     if (msg.classList.contains('alert-success')) {
       msg.style.display = 'block';
     }

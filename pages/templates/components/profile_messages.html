@@ -1,0 +1,9 @@
+{% if messages %}
+    <div class="profile-messages">
+        {% for message in messages %}
+            <div class="profile-alert {% if message.tags == 'error' %}profile-alert-error{% else %}profile-alert-success{% endif %}">
+                {% if message.tags == 'error' %}⚠{% else %}✓{% endif %} {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

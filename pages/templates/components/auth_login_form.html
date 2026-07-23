@@ -1,0 +1,42 @@
+<!-- Login Form -->
+<form class="auth-form" id="form-login" data-panel="login" method="post" action="{% url 'login_register' %}"
+      autocomplete="off" style="display:{% if active_tab == 'login' %}block{% else %}none{% endif %};">
+    {% csrf_token %}
+    <input type="hidden" name="login_submit" value="1">
+    <div class="auth-form-title">Welcome back</div>
+    <div class="auth-form-sub">Sign in to your FixPoint account.</div>
+
+    {% if login_form.non_field_errors %}
+        <div class="alert alert-error">⚠ {{ login_form.non_field_errors.0 }}</div>
+    {% endif %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+            {% if message.tags == 'error' %}⚠{% else %}✓{% endif %} {{ message }}
+        </div>
+    {% endfor %}
+
+    <div class="form-group">
+        <label class="form-label" for="login-email">EMAIL ADDRESS</label>
+        <input type="email" id="login-email" name="email" autocomplete="off"
+               class="form-input {% if login_form.email.errors %}input-error{% endif %}"
+               placeholder="you@example.com" value="{{ login_form.email.value|default:'' }}">
+        {% if login_form.email.errors %}<span class="field-error">{{ login_form.email.errors.0 }}</span>{% endif %}
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="login-password">PASSWORD</label>
+        <div class="password-input-wrap">
+            <input type="password" id="login-password" name="password" autocomplete="off"
+                   class="form-input password-input {% if login_form.password.errors %}input-error{% endif %}"
+                   placeholder="Password">
+            <button type="button" class="password-toggle" data-target="login-password" aria-label="Show password">Show</button>
+        </div>
+        {% if login_form.password.errors %}<span class="field-error">{{ login_form.password.errors.0 }}</span>{% endif %}
+    </div>
+
+    <div class="forgot-password">
+        <button type="button" class="forgot-link" data-switch-to="forgot">Forgot password?</button>
+    </div>
+
+    <button type="submit" class="btn-primary">SIGN IN →</button>
+</form>

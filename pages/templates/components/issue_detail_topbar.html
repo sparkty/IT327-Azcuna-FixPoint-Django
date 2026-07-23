@@ -1,0 +1,12 @@
+<div class="app-topbar">
+    <div>
+        <h1 class="page-title">Issue Details</h1>
+        <div class="page-sub">{{ issue.title }}</div>
+    </div>
+    <div class="topbar-actions">
+        <a href="{% url 'dashboard' %}" class="btn-sm ghost">← Back</a>
+        {% if request.user.is_superuser %}
+            <a href="#" class="btn-sm ghost" id="edit-btn">Edit</a>
+        {% endif %}
+    </div>
+</div>

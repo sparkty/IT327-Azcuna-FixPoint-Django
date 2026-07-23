@@ -1,0 +1,33 @@
+<!-- Reset Password Form -->
+<form class="auth-form" id="form-reset" data-panel="reset"
+      method="post" action="{% url 'reset_password' %}"
+      autocomplete="off" style="display:none;">
+    {% csrf_token %}
+    <div class="auth-form-title">Choose new password</div>
+    <div class="auth-form-sub">Enter a new password for your FixPoint account.</div>
+
+    <input type="hidden" id="reset-token" name="token" value="">
+
+    <div class="form-group">
+        <label class="form-label" for="reset-password">NEW PASSWORD</label>
+        <div class="password-input-wrap">
+            <input type="password" id="reset-password" name="password" autocomplete="off"
+                   class="form-input password-input" placeholder="Password">
+            <button type="button" class="password-toggle" data-target="reset-password" aria-label="Show password">Show</button>
+        </div>
+        <span class="field-error" data-error-for="reset-password"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="reset-confirm-password">CONFIRM NEW PASSWORD</label>
+        <div class="password-input-wrap">
+            <input type="password" id="reset-confirm-password" name="confirmPassword" autocomplete="off"
+                   class="form-input password-input" placeholder="Confirm password">
+            <button type="button" class="password-toggle" data-target="reset-confirm-password" aria-label="Show password">Show</button>
+        </div>
+        <span class="field-error" data-error-for="reset-confirm-password"></span>
+    </div>
+
+    <button type="submit" class="btn-primary">RESET PASSWORD</button>
+    <button type="button" class="btn-secondary" data-switch-to="login">BACK TO SIGN IN</button>
+</form>

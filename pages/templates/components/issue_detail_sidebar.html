@@ -1,0 +1,89 @@
+<div class="detail-sidebar">
+    <!-- Issue Status Card -->
+    <div class="form-card sticky-preview">
+        <div class="form-card-title">Issue Status</div>
+        <div class="preview-content">
+            <div>
+                <div class="form-label">CURRENT STATUS</div>
+                <div class="preview-status" style="margin-top: 6px;">
+                    <span class="badge {% if issue.status == 'PENDING' %}pending{% elif issue.status == 'IN_PROGRESS' %}inprogress{% elif issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}resolved{% else %}deletion{% endif %}">
+                        {{ issue.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Status Update Dropdown (Admin only) -->
+            {% if request.user.is_superuser %}
+            <div class="preview-section">
+                <div class="form-label">UPDATE STATUS</div>
+                <form method="POST" action="{% url 'update_status' issue.issueID %}">
+                    {% csrf_token %}
+                    <select class="status-select" name="status" onchange="this.form.submit()">
+                        <option value="PENDING" {% if issue.status == 'PENDING' %}selected{% endif %}>Open</option>
+                        <option value="IN_PROGRESS" {% if issue.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                        <option value="RESOLVED" {% if issue.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                        <option value="CLOSED" {% if issue.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+                    </select>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="preview-section">
+                <div class="form-label">PRIORITY</div>
+                <div class="preview-status" style="margin-top: 6px;">
+                    <span class="badge {% if issue.priority == 'HIGH' %}high{% elif issue.priority == 'MEDIUM' %}medium{% else %}low{% endif %}">
+                        {{ issue.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <div class="form-label">CATEGORY</div>
+                <div style="font-size: 13px; margin-top: 6px; color: var(--text2);">
+                    {{ issue.get_category_display }}
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <div class="form-label">REPORTER</div>
+                <div class="submitted-by" style="margin-top: 6px;">
+                    <div class="preview-avatar">{{ issue.user.first_name|slice:":1" }}{{ issue.user.last_name|slice:":1" }}</div>
+                    <span>{{ issue.user.get_full_name }}</span>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <div class="form-label">CREATED</div>
+                <div class="preview-date">{{ issue.createdAt|date:"M d, Y · H:i" }}</div>
+                <div class="form-label" style="margin-top: 10px;">LAST UPDATED</div>
+                <div class="preview-date">{{ issue.updatedAt|date:"M d, Y · H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone (issue owner only) -->
+    {% if not request.user.is_superuser and issue.user == request.user %}
+    <div class="form-card" style="border-color: rgba(239,68,68,0.2); margin-top: 16px;">
+        <div class="form-card-title">Danger Zone</div>
+        <button class="btn-sm danger"
+                style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); width: 100%;"
+                onclick="document.getElementById('delete-form').style.display='block'; this.style.display='none';">
+            Request Deletion
+        </button>
+        <form id="delete-form" method="POST" action="{% url 'request_deletion' issue.issueID %}"
+              style="display: none; margin-top: 12px;">
+            {% csrf_token %}
+            <div class="form-label" style="margin-bottom: 8px;">REASON FOR DELETION *</div>
+            <textarea class="comment-input-area" name="reason"
+                      placeholder="Explain why you want this issue deleted…" rows="3" required></textarea>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button type="submit" class="btn-sm primary">Submit Request</button>
+                <button type="button" class="btn-sm ghost"
+                        onclick="document.getElementById('delete-form').style.display='none'; document.querySelector('.btn-sm.danger').style.display='block';">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>

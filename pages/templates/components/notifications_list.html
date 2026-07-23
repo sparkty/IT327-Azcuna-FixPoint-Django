@@ -1,0 +1,38 @@
+<div class="notifications-list" id="notificationsList">
+    {% for notification in notifications %}
+        {% with lower_message=notification.message|lower %}
+        <form class="notification-form notification-row {% if not notification.isRead %}unread{% endif %}"
+              data-state="{% if notification.isRead %}read{% else %}unread{% endif %}"
+              method="POST"
+              action="{% url 'open_notification' notification.notificationID %}">
+            {% csrf_token %}
+            <button class="notification-button" type="submit">
+                <span class="notification-dot" aria-hidden="true"></span>
+                <span class="notification-icon {% if 'commented' in lower_message %}yellow{% elif 'status' in lower_message %}blue{% elif 'deletion' in lower_message %}red{% else %}green{% endif %}" aria-hidden="true">
+                    {% if 'commented' in lower_message %}C{% elif 'status' in lower_message %}S{% elif 'deletion' in lower_message %}!{% else %}N{% endif %}
+                </span>
+                <span class="notification-body">
+                    <span class="notification-text">{{ notification.message }}</span>
+                    <span class="notification-meta">
+                        {% if notification.issue %}
+                            Issue #{{ notification.display_issue_number }} -
+                        {% endif %}
+                        {{ notification.createdAt|timesince }} ago
+                    </span>
+                </span>
+            </button>
+        </form>
+        {% endwith %}
+    {% empty %}
+        <div class="empty-notifications" data-empty="all">
+            <div class="empty-icon">!</div>
+            <div class="empty-title">No notifications</div>
+            <div class="empty-message">Issue activity and admin updates will appear here.</div>
+        </div>
+    {% endfor %}
+    <div class="empty-notifications filter-empty" id="filterEmpty" hidden>
+        <div class="empty-icon">!</div>
+        <div class="empty-title">Nothing here</div>
+        <div class="empty-message">No notifications match this filter.</div>
+    </div>
+</div>

@@ -1,0 +1,16 @@
+<div class="issue-detail-header">
+    <div class="issue-detail-id">
+        ISSUE-{{ display_issue_number }} · Created {{ issue.createdAt|date:"M d, Y · H:i" }}
+    </div>
+    <div class="issue-detail-title">{{ issue.title }}</div>
+    <div class="issue-meta-row">
+        <div class="issue-meta-item">◫ {{ issue.get_category_display }}</div>
+        <div class="issue-meta-item">
+            ▲ <span style="color: {% if issue.priority == 'HIGH' %}var(--accent){% else %}inherit{% endif %};">
+                {{ issue.get_priority_display }} Priority
+            </span>
+        </div>
+        <div class="issue-meta-item">◐ {{ issue.user.get_full_name }}</div>
+        <div class="issue-meta-item">◷ Updated {{ issue.updatedAt|timesince }} ago</div>
+    </div>
+</div>

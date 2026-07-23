@@ -1,160 +1,22 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="FixPoint notifications">
-    <title>Notifications - FixPoint</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+{% block title %}Notifications - FixPoint{% endblock %}
+
+{% block page_css %}
     <link rel="stylesheet" href="{% static 'pages/css/notifications.css' %}">
-</head>
-<body>
-<div class="notifications-container">
-    <nav class="top-nav" role="navigation" aria-label="Top navigation">
-        <div class="top-nav-inner">
-            <div class="nav-logo">&#11041; FixPoint</div>
-            <div class="nav-right">
-                <span class="nav-user">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-                {% if request.user.is_superuser %}
-                    <span class="badge high" style="font-size:9px;padding:3px 10px;min-width:auto;">ADMIN</span>
-                {% endif %}
-                <a href="{% url 'logout' %}" class="btn-sm ghost" id="logout-btn">Logout</a>
-            </div>
-        </div>
-    </nav>
+{% endblock %}
 
-    <div class="content">
-        <div class="app-shell">
-            <aside class="sidebar" role="complementary" aria-label="Sidebar navigation">
-                <div class="sidebar-section">
-                    <div class="sidebar-label">Navigation</div>
-                    <a href="{% url 'dashboard' %}" class="sidebar-link" id="nav-dashboard">
-                        <span class="sidebar-icon">&#9672;</span> Dashboard
-                    </a>
-                    <a href="{% url 'create_issue' %}" class="sidebar-link" id="nav-create-issue">
-                        <span class="sidebar-icon">&#10010;</span> New Issue
-                    </a>
-                    <a href="{% url 'notifications' %}" class="sidebar-link active" id="nav-notifications">
-                        <span class="sidebar-icon">&#9678;</span>
-                        Notifications
-                        {% if unread_notifications_count %}
-                            <span class="sidebar-count">{{ unread_notifications_count }}</span>
-                        {% endif %}
-                    </a>
-                    <a href="#" class="sidebar-link" id="nav-profile">
-                        <span class="sidebar-icon">&#9676;</span> Profile
-                    </a>
-                </div>
-            </aside>
+{% block content %}
+    {% include "components/notifications_topbar.html" %}
 
-            <div class="main-area" role="main">
-                <div class="app-topbar">
-                    <div>
-                        <h1 class="page-title">Notifications</h1>
-                        <div class="page-sub">Issue updates, comments, and review requests</div>
-                    </div>
-                    <div class="topbar-actions">
-                        <form method="POST" action="{% url 'mark_all_notifications_read' %}">
-                            {% csrf_token %}
-                            <button class="btn-sm ghost" type="submit" {% if not unread_notifications_count %}disabled{% endif %}>Mark all read</button>
-                        </form>
-                        <form method="POST" action="{% url 'delete_read_notifications' %}">
-                            {% csrf_token %}
-                            <button class="btn-sm ghost" type="submit" {% if not read_notifications_count %}disabled{% endif %}>Delete read</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="page-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <div class="notification-tabs" role="tablist" aria-label="Notification filters">
-                        <button class="notification-tab active" type="button" data-filter="all">
-                            All <span class="tab-count">{{ total_notifications_count }}</span>
-                        </button>
-                        <button class="notification-tab" type="button" data-filter="unread">
-                            Unread <span class="tab-count unread">{{ unread_notifications_count }}</span>
-                        </button>
-                        <button class="notification-tab" type="button" data-filter="read">
-                            Read <span class="tab-count">{{ read_notifications_count }}</span>
-                        </button>
-                    </div>
-
-                    <div class="notifications-list" id="notificationsList">
-                        {% for notification in notifications %}
-                            {% with lower_message=notification.message|lower %}
-                            <form class="notification-form notification-row {% if not notification.isRead %}unread{% endif %}"
-                                  data-state="{% if notification.isRead %}read{% else %}unread{% endif %}"
-                                  method="POST"
-                                  action="{% url 'open_notification' notification.notificationID %}">
-                                {% csrf_token %}
-                                <button class="notification-button" type="submit">
-                                    <span class="notification-dot" aria-hidden="true"></span>
-                                    <span class="notification-icon {% if 'commented' in lower_message %}yellow{% elif 'status' in lower_message %}blue{% elif 'deletion' in lower_message %}red{% else %}green{% endif %}" aria-hidden="true">
-                                        {% if 'commented' in lower_message %}C{% elif 'status' in lower_message %}S{% elif 'deletion' in lower_message %}!{% else %}N{% endif %}
-                                    </span>
-                                    <span class="notification-body">
-                                        <span class="notification-text">{{ notification.message }}</span>
-                                        <span class="notification-meta">
-                                            {% if notification.issue %}
-                                                Issue #{{ notification.display_issue_number }} -
-                                            {% endif %}
-                                            {{ notification.createdAt|timesince }} ago
-                                        </span>
-                                    </span>
-                                </button>
-                            </form>
-                            {% endwith %}
-                        {% empty %}
-                            <div class="empty-notifications" data-empty="all">
-                                <div class="empty-icon">!</div>
-                                <div class="empty-title">No notifications</div>
-                                <div class="empty-message">Issue activity and admin updates will appear here.</div>
-                            </div>
-                        {% endfor %}
-                        <div class="empty-notifications filter-empty" id="filterEmpty" hidden>
-                            <div class="empty-icon">!</div>
-                            <div class="empty-title">Nothing here</div>
-                            <div class="empty-message">No notifications match this filter.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="page-body">
+        {% include "components/notifications_messages.html" %}
+        {% include "components/notifications_tabs.html" %}
+        {% include "components/notifications_list.html" %}
     </div>
-</div>
+{% endblock %}
 
-<script>
-    document.querySelectorAll('.notification-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            var filter = tab.dataset.filter;
-            var visibleCount = 0;
-
-            document.querySelectorAll('.notification-tab').forEach(function(item) {
-                item.classList.toggle('active', item === tab);
-            });
-
-            document.querySelectorAll('.notification-row').forEach(function(row) {
-                var shouldShow = filter === 'all' || row.dataset.state === filter;
-                row.hidden = !shouldShow;
-                if (shouldShow) visibleCount += 1;
-            });
-
-            var filterEmpty = document.getElementById('filterEmpty');
-            if (filterEmpty) {
-                filterEmpty.hidden = visibleCount !== 0 || document.querySelectorAll('.notification-row').length === 0;
-            }
-        });
-    });
-</script>
-</body>
-</html>
+{% block page_js %}
+    <script src="{% static 'pages/js/notifications.js' %}"></script>
+{% endblock %}

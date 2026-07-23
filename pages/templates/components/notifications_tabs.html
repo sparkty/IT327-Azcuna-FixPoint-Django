@@ -1,0 +1,11 @@
+<div class="notification-tabs" role="tablist" aria-label="Notification filters">
+    <button class="notification-tab active" type="button" data-filter="all">
+        All <span class="tab-count">{{ total_notifications_count }}</span>
+    </button>
+    <button class="notification-tab" type="button" data-filter="unread">
+        Unread <span class="tab-count unread">{{ unread_notifications_count }}</span>
+    </button>
+    <button class="notification-tab" type="button" data-filter="read">
+        Read <span class="tab-count">{{ read_notifications_count }}</span>
+    </button>
+</div>

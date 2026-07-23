@@ -1,0 +1,51 @@
+<div class="form-card">
+    <div class="form-card-title">Activity Timeline</div>
+    <div class="timeline">
+        <!-- Issue Created Event -->
+        <div class="timeline-item">
+            <div class="timeline-dot red">◈</div>
+            <div class="timeline-content">
+                <div class="timeline-event">
+                    Issue submitted by {{ issue.user.get_full_name }}
+                </div>
+                <div class="timeline-time">{{ issue.createdAt|date:"M d, Y · H:i" }}</div>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        {% for comment in issue.comments.all %}
+        <div class="timeline-item">
+            <div class="timeline-dot">◎</div>
+            <div class="timeline-content">
+                <div class="timeline-event">
+                    <strong>{{ comment.user.get_full_name }}</strong> commented
+                </div>
+                <div class="timeline-comment">{{ comment.content }}</div>
+                <div class="timeline-time">{{ comment.createdAt|date:"M d, Y · H:i" }}</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div class="timeline-event" style="color: var(--text3);">
+                    No additional activity yet.
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Comment Section -->
+    <div style="margin-top: 16px;">
+        <div class="form-label">ADD COMMENT</div>
+        <form method="POST" action="{% url 'add_comment' issue.issueID %}">
+            {% csrf_token %}
+            <textarea class="comment-input-area" name="content"
+                      placeholder="Write a comment or additional info…" rows="3"></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                <button type="submit" class="btn-sm primary">Post Comment</button>
+            </div>
+        </form>
+    </div>
+</div>

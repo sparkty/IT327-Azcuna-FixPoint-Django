@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile - FixPoint{% endblock %}
+
+{% block page_css %}
+    <link rel="stylesheet" href="{% static 'pages/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% include "components/profile_topbar.html" %}
+
+    <div class="page-body">
+        {% include "components/profile_messages.html" %}
+        {% include "components/profile_card.html" %}
+        {% include "components/profile_info.html" %}
+        {% include "components/profile_change_password.html" %}
+    </div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'pages/js/profile.js' %}"></script>
+{% endblock %}

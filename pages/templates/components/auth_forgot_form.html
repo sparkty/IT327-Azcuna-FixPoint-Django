@@ -1,0 +1,18 @@
+<!-- Forgot Password Form -->
+<form class="auth-form" id="form-forgot" data-panel="forgot"
+      method="post" action="{% url 'forgot_password' %}"
+      autocomplete="off" style="display:none;">
+    {% csrf_token %}
+    <div class="auth-form-title">Reset password</div>
+    <div class="auth-form-sub">Enter your account email and we'll send a reset link.</div>
+
+    <div class="form-group">
+        <label class="form-label" for="forgot-email">EMAIL ADDRESS</label>
+        <input type="email" id="forgot-email" name="email" autocomplete="off"
+               class="form-input" placeholder="you@example.com">
+        <span class="field-error" data-error-for="forgot-email"></span>
+    </div>
+
+    <button type="submit" class="btn-primary">SEND RESET LINK</button>
+    <button type="button" class="btn-secondary" data-switch-to="login">BACK TO SIGN IN</button>
+</form>

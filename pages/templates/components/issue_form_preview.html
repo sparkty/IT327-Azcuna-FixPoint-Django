@@ -1,0 +1,32 @@
+<div class="form-card sticky-preview">
+    <div class="form-card-title">Submission Preview</div>
+    <div class="preview-content">
+        <div>
+            <div class="form-label">SUBMITTED BY</div>
+            <div class="submitted-by">
+                <div class="preview-avatar" id="previewAvatar">{{ request.user.first_name|slice:":1" }}{{ request.user.last_name|slice:":1" }}</div>
+                <span id="previewName">{{ request.user.get_full_name }}</span>
+            </div>
+        </div>
+        <div class="preview-section">
+            <div class="form-label">INITIAL STATUS</div>
+            <div class="preview-status">
+                <span class="badge pending">Pending</span>
+            </div>
+        </div>
+        <div class="preview-section">
+            <div class="form-label">DATE &amp; TIME</div>
+            <div class="preview-date" id="previewDateTime">--</div>
+        </div>
+        <div class="preview-section">
+            <div class="form-label">NOTIFICATION</div>
+            <div class="preview-notification">✉️ Confirmation email will be sent upon submission.</div>
+        </div>
+        <div class="preview-section">
+            <div class="form-label">ATTACHMENTS</div>
+            <div class="preview-attachments" id="previewAttachments">0 file(s) attached</div>
+        </div>
+    </div>
+    <button type="submit" class="btn-primary" id="submitBtnForm">SUBMIT ISSUE →</button>
+    <button type="button" class="btn-draft" onclick="handleSaveDraft()">SAVE AS DRAFT</button>
+</div>

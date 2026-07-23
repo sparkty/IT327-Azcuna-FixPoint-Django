@@ -1,0 +1,75 @@
+<!-- Register Form -->
+<form class="auth-form" id="form-register" data-panel="register" method="post" action="{% url 'login_register' %}"
+      autocomplete="off" style="display:{% if active_tab == 'register' %}block{% else %}none{% endif %};">
+    {% csrf_token %}
+    <input type="hidden" name="register_submit" value="1">
+    <div class="auth-form-title">Create account</div>
+    <div class="auth-form-sub">Join FixPoint — it's free and secure.</div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label" for="register-firstname">FIRST NAME</label>
+            <input type="text" id="register-firstname" name="first_name"
+                   class="form-input {% if register_form.first_name.errors %}input-error{% endif %}"
+                   placeholder="FirstName" value="{{ register_form.first_name.value|default:'' }}">
+            {% if register_form.first_name.errors %}<span class="field-error">{{ register_form.first_name.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="register-lastname">LAST NAME</label>
+            <input type="text" id="register-lastname" name="last_name"
+                   class="form-input {% if register_form.last_name.errors %}input-error{% endif %}"
+                   placeholder="LastName" value="{{ register_form.last_name.value|default:'' }}">
+            {% if register_form.last_name.errors %}<span class="field-error">{{ register_form.last_name.errors.0 }}</span>{% endif %}
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="register-email">EMAIL ADDRESS</label>
+        <input type="email" id="register-email" name="email" autocomplete="off"
+               class="form-input {% if register_form.email.errors %}input-error{% endif %}"
+               placeholder="you@example.com" value="{{ register_form.email.value|default:'' }}">
+        {% if register_form.email.errors %}<span class="field-error">{{ register_form.email.errors.0 }}</span>{% endif %}
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="register-department">DEPARTMENT</label>
+        <select id="register-department" name="department"
+                class="form-input {% if register_form.department.errors %}input-error{% endif %}">
+            <option value="">Select department</option>
+            {% for value, label in register_form.fields.department.choices %}
+                <option value="{{ value }}" {% if register_form.department.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        {% if register_form.department.errors %}<span class="field-error">{{ register_form.department.errors.0 }}</span>{% endif %}
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="register-password">PASSWORD</label>
+        <div class="input-tooltip-wrapper">
+            <div class="password-input-wrap">
+                <input type="password" id="register-password" name="password" autocomplete="off"
+                       class="form-input password-input {% if register_form.password.errors %}input-error{% endif %}"
+                       placeholder="Password">
+                <button type="button" class="password-toggle" data-target="register-password" aria-label="Show password">Show</button>
+            </div>
+            <div class="password-tooltip">
+                <div class="tooltip-title">PASSWORD REQUIREMENTS</div>
+                <ul class="tooltip-list"><li>At least 8 characters</li></ul>
+            </div>
+        </div>
+        {% if register_form.password.errors %}<span class="field-error">{{ register_form.password.errors.0 }}</span>{% endif %}
+    </div>
+
+    <div class="form-group">
+        <label class="form-label" for="register-confirm-password">CONFIRM PASSWORD</label>
+        <div class="password-input-wrap">
+            <input type="password" id="register-confirm-password" name="confirm_password" autocomplete="off"
+                   class="form-input password-input {% if register_form.confirm_password.errors %}input-error{% endif %}"
+                   placeholder="Confirm password">
+            <button type="button" class="password-toggle" data-target="register-confirm-password" aria-label="Show password">Show</button>
+        </div>
+        {% if register_form.confirm_password.errors %}<span class="field-error">{{ register_form.confirm_password.errors.0 }}</span>{% endif %}
+    </div>
+
+    <button type="submit" class="btn-primary">CREATE ACCOUNT →</button>
+</form>
